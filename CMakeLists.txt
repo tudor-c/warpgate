@@ -3,21 +3,22 @@ project(warpgate)
 
 set(CMAKE_CXX_STANDARD 20)
 
+add_subdirectory(external/rpclib)
+
 # ----- SERVER -----
 add_executable(server
         src/server/server.cpp)
 target_include_directories(server PUBLIC
-        external/cpp-httplib
-        external/Crow/include
+        external/argparse/include
+        external/rpclib/include
         src)
-target_precompile_headers(server PUBLIC [["crow.h"]])
-
+target_link_libraries(server PRIVATE rpc)
 # ----- CLIENT -----
 add_executable(client
-        src/client/client.cpp)
+        src/client/client.cpp
+)
 target_include_directories(client PUBLIC
-        external/cpp-httplib
-        external/Crow/include
+        external/argparse/include
+        external/rpclib/include
         src)
-target_precompile_headers(client REUSE_FROM server)
-
+target_link_libraries(client PRIVATE rpc)

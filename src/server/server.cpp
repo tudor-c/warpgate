@@ -1,22 +1,27 @@
 #include <iostream>
+#include "rpc/server.h"
 
-#include "crow.h"
+void foo() {
+    std::cout << "foo was called!" << std::endl;
+}
 
-int main() {
-    std::cout << "Hello world from Server!\n";
+int main(int argc, char *argv[]) {
+    std::cout << "Starting server.." << std::endl;
+    // Creating a server that listens on port 8080
+    rpc::server srv(8080);
 
-    std::vector<std::string> clientHosts;
+    // Binding the name "foo" to free function foo.
+    // note: the signature is automatically captured
+    srv.bind("foo", &foo);
 
-    crow::SimpleApp app;
-    CROW_ROUTE(app, "/")([] {
-        return "hello world";
+    // Binding a lambda function to the name "add".
+    srv.bind("add", [](int a, int b) {
+        std::cout << "  :: called <add>\n";
+        return a + b;
     });
-    CROW_ROUTE(app, "/post").methods(crow::HTTPMethod::POST)([](const crow::request& req) {
-        auto jsonBody = crow::json::load(req.body);
-        auto val = jsonBody["arg"].i();
-        std::cout << val << '\n';
-        return "merge";
-    });
 
-    app.port(18080).multithreaded().run();
+    // Run the server loop.
+    srv.run();
+
+    return 0;
 }
