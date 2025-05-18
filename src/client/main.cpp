@@ -1,4 +1,5 @@
 #include <format>
+#include <dlfcn.h>
 
 #include <argparse/argparse.hpp>
 
@@ -26,8 +27,18 @@ int main(int argc, char* argv[]) {
     }
 
     int trackerPort = args.get<int>("--port");
-    auto taskPath = args.get<std::string>("--task");
+    auto tasklibPath = args.get<std::string>("--task");
 
+    system("pwd");
+    std::cout << std::format("|{}|\n", tasklibPath);
+    void* handle = dlopen(tasklibPath.c_str(), RTLD_LAZY);
+    if (!handle) {
+        std::cout << "nu merge..\n";
+    }
+    std::cout << "se incarca!\n";
+    typedef void (*hello_func)();
+    hello_func hello = (hello_func)dlsym(handle, "test_fun");
+    hello();
 
 
 

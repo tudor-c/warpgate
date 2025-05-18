@@ -29,3 +29,8 @@ target_include_directories(client PUBLIC
         external/rpclib/include
         src)
 target_link_libraries(client PRIVATE rpc)
+
+# ----- TASKLIB -----
+add_library(tasklib SHARED
+        src/tasklib/tasklib.cpp)
+target_include_directories(tasklib PUBLIC src)
