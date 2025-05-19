@@ -1,4 +1,4 @@
-#include "client.h"
+    #include "client.h"
 
 #include <format>
 #include <iostream>
@@ -18,8 +18,13 @@ Client::~Client() {
     unregisterAsWorker();
 }
 
-void Client::run() {
-    // TODO implement
+int Client::run() {
+    bool connected = registerAsWorker();
+    if (!connected) {
+        std::cerr << "Could not connect!\n";
+        return 1;
+    }
+    return 0;
 }
 
 bool Client::registerAsWorker() {

@@ -11,7 +11,7 @@ public:
 
     ~Client();
 
-    void run();
+    int run();
 
     bool registerAsWorker();
 

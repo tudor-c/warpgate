@@ -4,3 +4,6 @@
 [submodule "external/rpclib"]
 	path = external/rpclib
 	url = https://github.com/rpclib/rpclib.git
+[submodule "external/nlohmann"]
+	path = external/nlohmann
+	url = https://github.com/nlohmann/json.git

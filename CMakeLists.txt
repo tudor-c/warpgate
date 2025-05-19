@@ -14,6 +14,7 @@ add_executable(tracker
 target_include_directories(tracker PUBLIC
         external/argparse/include
         external/rpclib/include
+        external/nlohmann/single_include
         src)
 target_link_libraries(tracker PRIVATE rpc)
 
@@ -23,12 +24,16 @@ add_executable(client
         src/consts.h
         src/client/client.h
         src/client/client.cpp
+        src/client/library.h
+        src/client/library.cpp
 )
 target_include_directories(client PUBLIC
         external/argparse/include
         external/rpclib/include
+        external/nlohmann/single_include
         src)
 target_link_libraries(client PRIVATE rpc)
+add_dependencies(client tasklib)
 
 # ----- TASKLIB -----
 add_library(tasklib SHARED

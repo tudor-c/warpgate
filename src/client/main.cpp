@@ -1,20 +1,21 @@
 #include <format>
-#include <dlfcn.h>
 
 #include <argparse/argparse.hpp>
 
 #include "client.h"
 #include "consts.h"
 
-int main(int argc, char* argv[]) {
-    argparse::ArgumentParser args("client");
+bool parseArguments(int argc, char* argv[], argparse::ArgumentParser& args) {
+    args.add_argument(FLAG_CLIENT_TRACKER_HOST)
+        .default_value(TRACKER_HOST)
+        .help("Tracker host address");
 
-    args.add_argument("--port")
-        .help("Tracker port")
+    args.add_argument(FLAG_CLIENT_TRACKER_PORT)
         .default_value(TRACKER_PORT)
-        .scan<'i', int>();
+        .scan<'i', int>()
+        .help("Tracker port");
 
-    args.add_argument("--task")
+    args.add_argument(FLAG_CLIENT_TASK_PATH)
         .help("Path to task file");
 
     try {
@@ -23,33 +24,21 @@ int main(int argc, char* argv[]) {
     catch (const std::exception& err) {
         std::cerr << err.what() << std::endl;
         std::cerr << args;
+        return false;
+    }
+    return true;
+}
+
+int main(int argc, char* argv[]) {
+    argparse::ArgumentParser args("client");
+    if (!parseArguments(argc, argv, args)) {
         return 1;
     }
 
+    std::string trackerHost = args.get<std::string>("--host");
     int trackerPort = args.get<int>("--port");
-    auto tasklibPath = args.get<std::string>("--task");
+    // auto tasklibPath = args.get<std::string>("--task");
 
-    system("pwd");
-    std::cout << std::format("|{}|\n", tasklibPath);
-    void* handle = dlopen(tasklibPath.c_str(), RTLD_LAZY);
-    if (!handle) {
-        std::cout << "nu merge..\n";
-    }
-    std::cout << "se incarca!\n";
-    typedef void (*hello_func)();
-    hello_func hello = (hello_func)dlsym(handle, "test_fun");
-    hello();
-
-
-
-    // Client client(LOCALHOST, 8080);
-    // bool connected = client.registerAsWorker();
-    // if (!connected) {
-    //     std::cerr << "Could not connect!\n";
-    //     return 1;
-    // }
-    //
-    // sleep(50);
-    //
-    // return 0;
+    Client client(LOCALHOST, trackerPort);
+    return client.run();
 }
