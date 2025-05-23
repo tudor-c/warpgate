@@ -21,6 +21,8 @@ private:
 
     int getOwnPort() const;
 
+    int mAssignedId;  // unique id assigned by host on client creation
+
     std::string mTrackerHost;
     int mTrackerPort;
 

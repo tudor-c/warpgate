@@ -9,7 +9,7 @@ public:
 
     void run();
 
-    void registerWorker(const std::string& host, int port);
+    int registerWorker(const std::string& host, int port);
 
     void unregisterWorker(const std::string& host, int port);
 
@@ -17,7 +17,14 @@ public:
 
     static std::string socketAddress(std::string host, int port);
 
+    struct Client {
+        std::string socketAddr;
+        std::unique_ptr<rpc::client> worker;
+    };
+
 private:
-    std::unordered_map<std::string, std::unique_ptr<rpc::client>> mWorkers;
+    std::unordered_map<int, Client> mClients;
     rpc::server mServer;
+
+    int generateNewClientId() const;
 };

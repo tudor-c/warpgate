@@ -7,7 +7,7 @@ add_subdirectory(external/rpclib)
 
 # ----- TRACKER -----
 add_executable(tracker
-        src/tracker/main.cpp
+        src/tracker/trackerMain.cpp
         src/consts.h
         src/tracker/tracker.h
         src/tracker/tracker.cpp)
@@ -20,7 +20,7 @@ target_link_libraries(tracker PRIVATE rpc)
 
 # ----- CLIENT -----
 add_executable(client
-        src/client/main.cpp
+        src/client/clientMain.cpp
         src/consts.h
         src/client/client.h
         src/client/client.cpp

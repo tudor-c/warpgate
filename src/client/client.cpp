@@ -42,7 +42,7 @@ int Client::run() {
 bool Client::registerAsWorker() {
     mClient.set_timeout(TIMEOUT_MS);
     try {
-        mClient.call(RPC_REGISTER_WORKER, LOCALHOST, getOwnPort());
+        mAssignedId = mClient.call(RPC_REGISTER_WORKER, LOCALHOST, getOwnPort()).as<int>();
     } catch (std::exception& e) {
         std::cerr << std::format("Could not connect to tracker at {}:{}!\n {}\n",
             mTrackerHost, mTrackerPort, e.what());
