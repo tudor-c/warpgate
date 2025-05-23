@@ -1,9 +1,14 @@
 #pragma once
 
 // RPC function names
+//   Tracker
 constexpr auto RPC_REGISTER_WORKER = "registerWorker";
 constexpr auto RPC_UNREGISTER_WORKER = "unregisterWorker";
 constexpr auto RPC_TEST_METHOD = "testMethod";
+
+//   Client
+constexpr auto RPC_TEST_ANNOUNCEMENT = "testAnnounce";
+constexpr auto RPC_TEST_ANNOUNCEMENT_BROADCAST = "testAnnounceBroadcast";
 
 // Connection parameters
 constexpr auto LOCALHOST = "127.0.0.1";

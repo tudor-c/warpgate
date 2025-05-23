@@ -23,6 +23,9 @@ private:
 
     std::string mTrackerHost;
     int mTrackerPort;
-    rpc::server mOwnServer;
+
     rpc::client mClient;
+
+    rpc::server mOwnServer;
+    std::thread mServerThread;
 };

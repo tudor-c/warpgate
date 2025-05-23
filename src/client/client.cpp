@@ -8,10 +8,10 @@
 Client::Client(const std::string &trackerHost, int trackerPort) :
         mTrackerHost(trackerHost),
         mTrackerPort(trackerPort),
-        mOwnServer(FREE_PORT),
-        mClient(trackerHost, trackerPort) {
-    std::cout << "Starting worker 🌐\n";
-    // mOwnServer.run();
+        mClient(trackerHost, trackerPort),
+        mOwnServer(FREE_PORT) {
+    std::cout << std::format("\nStarting worker at {}:{} 🌐\n\n",
+        LOCALHOST, mOwnServer.port());
 }
 
 Client::~Client() {
@@ -24,6 +24,18 @@ int Client::run() {
         std::cerr << "Could not connect!\n";
         return 1;
     }
+
+    mOwnServer.bind(RPC_TEST_ANNOUNCEMENT_BROADCAST, [](const std::string& mess) {
+        std::cout << "Announcement from another peer: " << mess << "\n";
+    });
+    mServerThread = std::thread(&rpc::server::run, &mOwnServer);
+
+    mClient.call(RPC_TEST_ANNOUNCEMENT,
+        std::format("Hello world! I'm {}:{}\n", LOCALHOST, mOwnServer.port()));
+
+    // teardown
+    mServerThread.join();
+    unregisterAsWorker();
     return 0;
 }
 

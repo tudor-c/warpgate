@@ -5,7 +5,8 @@
 #include "consts.h"
 
 Tracker::Tracker() : mServer(TRACKER_PORT) {
-    std::cout << "Starting tracker 🚀\n";
+    std::cout << std::format("\nStarting tracker at {}:{} 🚀\n\n",
+        LOCALHOST, mServer.port());
 
     mServer.bind(RPC_REGISTER_WORKER, [this](const std::string &host, int port) {
         this->registerWorker(host, port);
@@ -15,6 +16,11 @@ Tracker::Tracker() : mServer(TRACKER_PORT) {
     });
     mServer.bind(RPC_TEST_METHOD, [] {
         std::cout << "test method called\n";
+    });
+    mServer.bind(RPC_TEST_ANNOUNCEMENT, [this](const std::string& mess) {
+        for (auto& [_, client] : mWorkers) {
+            client->call(RPC_TEST_ANNOUNCEMENT_BROADCAST, mess);
+        }
     });
 }
 

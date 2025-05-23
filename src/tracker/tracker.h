@@ -17,11 +17,6 @@ public:
 
     static std::string socketAddress(std::string host, int port);
 
-    struct Socket {
-        std::string host;
-        int port;
-    };
-
 private:
     std::unordered_map<std::string, std::unique_ptr<rpc::client>> mWorkers;
     rpc::server mServer;
