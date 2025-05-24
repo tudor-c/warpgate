@@ -11,7 +11,7 @@ public:
 
     int registerWorker(const std::string& host, int port);
 
-    void unregisterWorker(const std::string& host, int port);
+    void unregisterWorker(int id);
 
     void printWorkers() const;
 

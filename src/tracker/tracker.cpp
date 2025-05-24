@@ -11,8 +11,8 @@ Tracker::Tracker() : mServer(TRACKER_PORT) {
     mServer.bind(RPC_REGISTER_WORKER, [this](const std::string &host, int port) {
         return this->registerWorker(host, port);
     });
-    mServer.bind(RPC_UNREGISTER_WORKER, [this](const std::string &host, int port) {
-        this->unregisterWorker(host, port);
+    mServer.bind(RPC_UNREGISTER_WORKER, [this](int id) {
+        this->unregisterWorker(id);
     });
     mServer.bind(RPC_TEST_METHOD, [] {
         std::cout << "test method called\n";
@@ -41,17 +41,15 @@ int Tracker::registerWorker(const std::string &host, int port) {
     return id;
 }
 
-void Tracker::unregisterWorker(const std::string& host, int port) {
-    std::erase_if(mClients, [&](const auto& pair) {
-        auto& [_, client] = pair;
-        return client.socketAddr == socketAddress(host, port);
-    });
+void Tracker::unregisterWorker(int id) {
+    mClients.erase(id);
 }
 
 void Tracker::printWorkers() const {
     std::cout << "Workers:\n";
-    for (auto&[socketAddress, _] : mClients) {
-        std::cout << std::format("  {}\n", socketAddress);
+    for (auto& [_, client] : mClients) {
+        auto& socketAddr = client.socketAddr;
+        std::cout << std::format("  {}\n", socketAddr);
     }
 }
 

@@ -17,3 +17,7 @@
 cmake-build-*/
 
 *.iws
+
+.venv
+
+output

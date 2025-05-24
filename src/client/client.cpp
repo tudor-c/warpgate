@@ -42,7 +42,7 @@ int Client::run() {
 bool Client::registerAsWorker() {
     mClient.set_timeout(TIMEOUT_MS);
     try {
-        mAssignedId = mClient.call(RPC_REGISTER_WORKER, LOCALHOST, getOwnPort()).as<int>();
+        mOwnId = mClient.call(RPC_REGISTER_WORKER, LOCALHOST, getOwnPort()).as<int>();
     } catch (std::exception& e) {
         std::cerr << std::format("Could not connect to tracker at {}:{}!\n {}\n",
             mTrackerHost, mTrackerPort, e.what());
@@ -60,7 +60,7 @@ bool Client::registerAsWorker() {
 void Client::unregisterAsWorker() {
     std::cout << std::format("Unregistered as worker for tracker at {}:{}\n",
         mTrackerHost, mTrackerPort);
-    mClient.call(RPC_UNREGISTER_WORKER, LOCALHOST, getOwnPort()); // TODO replace with some ID
+    mClient.call(RPC_UNREGISTER_WORKER, mOwnId);
 }
 
 int Client::getOwnPort() const {
