@@ -7,10 +7,13 @@ add_subdirectory(external/rpclib)
 
 # ----- TRACKER -----
 add_executable(tracker
-        src/tracker/trackerMain.cpp
+        src/tracker/tracker_main.cpp
         src/consts.h
         src/tracker/tracker.h
-        src/tracker/tracker.cpp)
+        src/tracker/tracker.cpp
+        src/shared/Task.cpp
+        src/shared/Task.h)
+target_compile_options(tracker PRIVATE -Wall -Wextra -Wpedantic)
 target_include_directories(tracker PUBLIC
         external/argparse/include
         external/rpclib/include
@@ -20,13 +23,16 @@ target_link_libraries(tracker PRIVATE rpc)
 
 # ----- CLIENT -----
 add_executable(client
-        src/client/clientMain.cpp
+        src/client/client_main.cpp
         src/consts.h
         src/client/client.h
         src/client/client.cpp
         src/client/library.h
         src/client/library.cpp
+        src/shared/Task.cpp
+        src/shared/Task.h
 )
+target_compile_options(client PRIVATE -Wall -Wextra -Wpedantic)
 target_include_directories(client PUBLIC
         external/argparse/include
         external/rpclib/include

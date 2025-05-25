@@ -1,4 +1,35 @@
 {
-  "trackerHost": "localhost",
-  "trackerPort": "18080"
+  "name": "test task 1",
+  "subtasks": [
+    {
+      "id": 1,
+      "function": "func1",
+      "parent": -1
+    },
+    {
+      "id": 2,
+      "function": "func2",
+      "parent": 2
+    },
+    {
+      "id": 3,
+      "function": "func3",
+      "parent": 2
+    },
+    {
+      "id": 4,
+      "function": "func4",
+      "parent": 2
+    },
+    {
+      "id": 5,
+      "function": "func5",
+      "parent": 2
+    },
+    {
+      "id": 6,
+      "function": "func6",
+      "parent": 3
+    }
+  ]
 }

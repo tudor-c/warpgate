@@ -24,9 +24,8 @@ def configure_build_system(build_type: BuildType):
     os.system(f'cmake {release_flag} -S . -B {build_path}')
 
 def clear_build_output(build_type: BuildType):
-    build_path = build_path_by_type(build_type)
     try:
-        shutil.rmtree(build_path)
+        shutil.rmtree(OUTPUT_DIR)
     except FileNotFoundError:
         pass
 

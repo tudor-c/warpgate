@@ -1,8 +1,7 @@
 #include "tracker.h"
 
-int main(int argc, char *argv[]) {
+int main() {
     Tracker tracker;
     tracker.run();
-
     return 0;
 }
