@@ -4,32 +4,32 @@
     {
       "id": 1,
       "function": "func1",
-      "parent": -1
+      "depends_on": [2, 3]
     },
     {
       "id": 2,
       "function": "func2",
-      "parent": 2
+      "depends_on": [4, 5]
     },
     {
       "id": 3,
       "function": "func3",
-      "parent": 2
+      "depends_on": [6]
     },
     {
       "id": 4,
       "function": "func4",
-      "parent": 2
+      "depends_on": []
     },
     {
       "id": 5,
       "function": "func5",
-      "parent": 2
+      "depends_on": []
     },
     {
       "id": 6,
       "function": "func6",
-      "parent": 3
+      "depends_on": []
     }
   ]
 }

@@ -12,7 +12,9 @@ add_executable(tracker
         src/tracker/tracker.h
         src/tracker/tracker.cpp
         src/shared/Task.cpp
-        src/shared/Task.h)
+        src/shared/Task.h
+        src/shared/utils.cpp
+        src/shared/utils.h)
 target_compile_options(tracker PRIVATE -Wall -Wextra -Wpedantic)
 target_include_directories(tracker PUBLIC
         external/argparse/include
@@ -31,6 +33,8 @@ add_executable(client
         src/client/library.cpp
         src/shared/Task.cpp
         src/shared/Task.h
+        src/shared/utils.cpp
+        src/shared/utils.h
 )
 target_compile_options(client PRIVATE -Wall -Wextra -Wpedantic)
 target_include_directories(client PUBLIC
