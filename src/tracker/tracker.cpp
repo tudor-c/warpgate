@@ -8,10 +8,10 @@ Tracker::Tracker() : mServer(TRACKER_PORT) {
     std::cout << std::format("\nStarting tracker at {}:{} 🚀\n\n",
         LOCALHOST, mServer.port());
 
-    mServer.bind(RPC_REGISTER_WORKER, [this](const std::string &host, int port) {
+    mServer.bind(RPC_REGISTER_CLIENT, [this](const std::string &host, int port) {
         return this->registerWorker(host, port);
     });
-    mServer.bind(RPC_UNREGISTER_WORKER, [this](int id) {
+    mServer.bind(RPC_UNREGISTER_CLIENT, [this](int id) {
         this->unregisterWorker(id);
     });
     mServer.bind(RPC_TEST_METHOD, [] {

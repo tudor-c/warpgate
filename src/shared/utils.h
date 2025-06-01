@@ -2,4 +2,4 @@
 
 #include <string>
 
-std::string readFile(const std::string &path);
+std::string readTextFile(const std::string &path);

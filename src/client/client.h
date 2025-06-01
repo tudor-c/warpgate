@@ -13,17 +13,21 @@
 class Client {
 
 public:
-    Client(const std::string& trackerHost, int trackerPort);
+    Client(
+        const std::string& trackerHost,
+        int trackerPort,
+        bool registerAsWorker,
+        std::optional<std::string> taskConfigPath);
 
     ~Client();
 
     int run();
 
-    bool registerAsWorker();
+    bool registerAsClient();
 
 private:
 
-    void unregisterAsWorker();
+    void unregisterAsClient();
 
     int getOwnPort() const;
 

@@ -1,25 +1,36 @@
-    #include "client.h"
+#include "client.h"
 
 #include <format>
 #include <iostream>
 
 #include "consts.h"
+#include "shared/Task.h"
 
-Client::Client(const std::string &trackerHost, int trackerPort) :
+    Client::Client(
+    const std::string &trackerHost,
+    int trackerPort,
+    bool registerAsWorker,
+    std::optional<std::string> taskConfigPath) :
         mTrackerHost(trackerHost),
         mTrackerPort(trackerPort),
         mClient(trackerHost, trackerPort),
         mOwnServer(FREE_PORT) {
+
     std::cout << std::format("\nStarting worker at {}:{} 🌐\n\n",
         LOCALHOST, mOwnServer.port());
+
+    if (taskConfigPath.has_value()) {
+        Task task(taskConfigPath.value());
+    }
+
 }
 
 Client::~Client() {
-    unregisterAsWorker();
+    unregisterAsClient();
 }
 
 int Client::run() {
-    bool connected = registerAsWorker();
+    bool connected = registerAsClient();
     if (!connected) {
         std::cerr << "Could not connect!\n";
         return 1;
@@ -35,14 +46,14 @@ int Client::run() {
 
     // teardown
     mServerThread.join();
-    unregisterAsWorker();
+    unregisterAsClient();
     return 0;
 }
 
-bool Client::registerAsWorker() {
+bool Client::registerAsClient() {
     mClient.set_timeout(TIMEOUT_MS);
     try {
-        mOwnId = mClient.call(RPC_REGISTER_WORKER, LOCALHOST, getOwnPort()).as<int>();
+        mOwnId = mClient.call(RPC_REGISTER_CLIENT, LOCALHOST, getOwnPort()).as<int>();
     } catch (std::exception& e) {
         std::cerr << std::format("Could not connect to tracker at {}:{}!\n {}\n",
             mTrackerHost, mTrackerPort, e.what());
@@ -57,10 +68,10 @@ bool Client::registerAsWorker() {
     return true;
 }
 
-void Client::unregisterAsWorker() {
+void Client::unregisterAsClient() {
     std::cout << std::format("Unregistered as worker for tracker at {}:{}\n",
         mTrackerHost, mTrackerPort);
-    mClient.call(RPC_UNREGISTER_WORKER, mOwnId);
+    mClient.call(RPC_UNREGISTER_CLIENT, mOwnId);
 }
 
 int Client::getOwnPort() const {

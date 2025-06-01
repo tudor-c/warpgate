@@ -4,7 +4,7 @@
 #include <sstream>
 #include <filesystem>
 
-std::string readFile(const std::string& path) {
+std::string readTextFile(const std::string& path) {
     auto size = file_size(std::filesystem::path(path));
     std::string buffer(size, '\0');
     std::ifstream file(path);

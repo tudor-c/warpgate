@@ -15,7 +15,7 @@ bool parseArguments(int argc, char* argv[], argparse::ArgumentParser& args) {
         .scan<'i', int>()
         .help("Tracker port");
 
-    args.add_argument(FLAG_CLIENT_TASK_PATH)
+    args.add_argument(FLAG_CLIENT_TASK_CONFIG_PATH)
         .help("Path to task file");
 
     try {
@@ -35,10 +35,15 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    std::string trackerHost = args.get<std::string>("--host");
-    int trackerPort = args.get<int>("--port");
-    // auto tasklibPath = args.get<std::string>("--task");
+    auto trackerHost = args.get<std::string>("--host");
+    auto trackerPort = args.get<int>("--port");
+    auto taskConfigPath = args.get<std::string>("--task");
 
-    Client client(LOCALHOST, trackerPort);
+    Client client(
+        LOCALHOST,
+        trackerPort,
+        true,
+        taskConfigPath);
+
     return client.run();
 }

@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-struct SubTask {
+struct Subtask {
     int id;
     bool completed = false;
     std::string functionName;
@@ -15,11 +15,12 @@ class Task {
 public:
     Task(const std::string& path);
 
-    std::vector<SubTask> getAvailableSubtasks() const;
+    std::vector<Subtask> getAvailableSubtasks() const;
 
     bool isCompleted() const;
 
 private:
-    SubTask rootTask;
-
+    std::string mName;
+    Subtask rootTask;
+    std::unordered_map<int, Subtask> mSubtasks;
 };
