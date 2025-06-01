@@ -37,9 +37,14 @@ def main():
     parser.add_argument('-c', '--configure', action='store_true', dest='configure')
     parser.add_argument('--clear', action='store_true', dest='clear')
     parser.add_argument('-r', '--run', action='store_true', dest='run')
+    parser.add_argument('remainder', nargs='*')
 
     args = parser.parse_args()
     build_type = BuildType.DEBUG if not args.release else BuildType.RELEASE
+
+    # keep in remainder only argument positioned after '--'
+    if '--' in args.remainder:
+        args.remainder = args.remainder[args.remainder.index('--') + 1 : ]
 
     if args.clear:
         clear_build_output(build_type)
@@ -51,7 +56,8 @@ def main():
         if args.target is None:
             print("Specify a target!")
             exit(1)
-        os.system(f'./{build_path_by_type(build_type)}/{args.target}')
+        target_arguments = ' '.join(args.remainder)
+        os.system(f'./{build_path_by_type(build_type)}/{args.target} {target_arguments}')
 
 
 if __name__ == "__main__":
