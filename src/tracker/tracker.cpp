@@ -1,5 +1,6 @@
 #include <format>
 #include <iostream>
+#include <ranges>
 
 #include "tracker.h"
 #include "consts.h"
@@ -18,20 +19,21 @@ Tracker::Tracker() : mServer(TRACKER_PORT) {
         std::cout << "test method called\n";
     });
     mServer.bind(RPC_TEST_ANNOUNCEMENT, [this](const std::string& mess) {
-        for (auto& [_, client] : mClients) {
+        for (const auto& client : mClients | std::views::values) {
             client.worker->call(RPC_TEST_ANNOUNCEMENT_BROADCAST, mess);
         }
     });
 }
 
-void Tracker::run() {
+int Tracker::run() {
     mServer.run();
+    return 0;
 }
 
 int Tracker::registerWorker(const std::string &host, int port) {
     // TODO check duplicates
     int id = generateNewClientId();
-    std::string socketAddr = socketAddress(host, port);
+    const std::string socketAddr = socketAddress(host, port);
 
     mClients[id] = Client {
         socketAddr,
@@ -47,7 +49,7 @@ void Tracker::unregisterWorker(int id) {
 
 void Tracker::printWorkers() const {
     std::cout << "Workers:\n";
-    for (auto& [_, client] : mClients) {
+    for (const auto& client: mClients | std::views::values) {
         auto& socketAddr = client.socketAddr;
         std::cout << std::format("  {}\n", socketAddr);
     }

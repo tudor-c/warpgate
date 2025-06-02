@@ -12,7 +12,7 @@ class Tracker {
 public:
     Tracker();
 
-    void run();
+    int run();
 
     int registerWorker(const std::string& host, int port);
 

@@ -3,7 +3,7 @@
 #include <iostream>
 #include <print>
 
-#include <nlohmann/json.hpp>
+#include <../external/nlohmann/single_include/nlohmann/json.hpp>
 
 #include "consts.h"
 #include "Task.h"

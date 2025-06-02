@@ -3,7 +3,7 @@
 
 #include "client.h"
 #include "consts.h"
-#include "shared/Task.h"
+#include "../Task.h"
 
 Client::Client(
     const std::string &trackerHost,
