@@ -2,7 +2,7 @@
 
 // Suppress warning from external library
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wclass-memaccess"
+#pragma GCC diagnostic ignored "-Wclass-memaccess" // TODO maybe remove
 #include <rpc/client.h>
 #include <rpc/server.h>
 #pragma GCC diagnostic pop
@@ -28,8 +28,8 @@ public:
     };
 
 private:
-    std::unordered_map<int, Client> mClients;
-    rpc::server mServer;
+    std::unordered_map<int, Client> mRpcClients;
+    rpc::server mRpcServer;
 
     int generateNewClientId() const;
 };
