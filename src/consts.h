@@ -26,6 +26,7 @@ constexpr auto FLAG_CLIENT_TASK_CONFIG_PATH = "--task";
 constexpr auto JSON_TASK_NAME = "name";
 constexpr auto JSON_SUBTASKS = "subtasks";
 constexpr auto JSON_TASK_ID = "id";
+constexpr auto JSON_TASK_ROOT = "root";
 constexpr auto JSON_TASK_FUNCTION = "function";
 constexpr auto JSON_TASK_DEPENDS_ON = "depends_on";
 

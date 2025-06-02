@@ -1,5 +1,6 @@
 {
   "name": "test task 1",
+  "root": 1,
   "subtasks": [
     {
       "id": 1,

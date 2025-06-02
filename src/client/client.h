@@ -17,7 +17,7 @@ public:
         const std::string& trackerHost,
         int trackerPort,
         bool registerAsWorker,
-        std::optional<std::string> taskConfigPath);
+        const std::string &taskConfigPath);
 
     ~Client();
 

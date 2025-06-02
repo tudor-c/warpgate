@@ -1,10 +1,12 @@
 #include <format>
 #include <fstream>
+#include <iostream>
+#include <print>
 
 #include <nlohmann/json.hpp>
 
-#include "Task.h"
 #include "consts.h"
+#include "Task.h"
 
 using json = nlohmann::json;
 
@@ -17,15 +19,23 @@ Task::Task(const std::string& path) {
         throw std::runtime_error(std::format("No such task config file: {}\n", path));
     }
 
-    if (!config.contains(JSON_TASK_NAME) || !config.contains(JSON_SUBTASKS)) {
+    auto anyMissing = [&](const json& configEntry, const std::initializer_list<std::string_view>& keys) {
+        for (auto& key : keys) {
+            if (!configEntry.contains(key)) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    if (anyMissing(config, {JSON_TASK_NAME, JSON_TASK_ROOT, JSON_SUBTASKS})) {
         throw std::runtime_error("Missing config name or subtasks section!\n");
     }
-
     mName = config.at(JSON_TASK_NAME);
+    mRoot = config.at(JSON_TASK_ROOT);
+
     for (auto entry : config.at(JSON_SUBTASKS)) {
-        if (!entry.contains(JSON_TASK_ID) ||
-            !entry.contains(JSON_TASK_FUNCTION) ||
-            !entry.contains(JSON_TASK_DEPENDS_ON)) {
+        if (anyMissing(entry, {JSON_TASK_ID, JSON_TASK_FUNCTION, JSON_TASK_DEPENDS_ON})) {
             throw std::runtime_error("Missing subtask fields!\n");
         }
         auto id = entry.at(JSON_TASK_ID);
@@ -35,9 +45,18 @@ Task::Task(const std::string& path) {
     }
 }
 
+void Task::print() {
+    std::cout << std::format("Task: {}, root: {}, subtasks:\n", mName, mRoot);
+    for (const auto &subtask : mSubtasks | std::views::values) {
+        std::print(" - id: {}, name: {}, dependsOn: {}\n",
+            subtask.id, subtask.functionName, subtask.dependsOn);
+    }
+}
+
 std::vector<Subtask> Task::getAvailableSubtasks() const {
+    return {}; // TODO implement
 }
 
 bool Task::isCompleted() const {
-    return rootTask.completed;
+    return mSubtasks.at(mRoot).completed;
 }

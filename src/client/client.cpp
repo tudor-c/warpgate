@@ -1,16 +1,15 @@
-#include "client.h"
-
 #include <format>
 #include <iostream>
 
+#include "client.h"
 #include "consts.h"
 #include "shared/Task.h"
 
-    Client::Client(
+Client::Client(
     const std::string &trackerHost,
-    int trackerPort,
-    bool registerAsWorker,
-    std::optional<std::string> taskConfigPath) :
+    const int trackerPort,
+    [[maybe_unused]] bool registerAsWorker, // TODO use
+    const std::string &taskConfigPath) :
         mTrackerHost(trackerHost),
         mTrackerPort(trackerPort),
         mClient(trackerHost, trackerPort),
@@ -19,10 +18,15 @@
     std::cout << std::format("\nStarting worker at {}:{} 🌐\n\n",
         LOCALHOST, mOwnServer.port());
 
-    if (taskConfigPath.has_value()) {
-        Task task(taskConfigPath.value());
+    if (!taskConfigPath.empty()) {
+        try {
+            Task task(taskConfigPath);
+            task.print();
+        }
+        catch (std::runtime_error& e) {
+            std::cerr << e.what() << '\n';
+        }
     }
-
 }
 
 Client::~Client() {
@@ -30,8 +34,7 @@ Client::~Client() {
 }
 
 int Client::run() {
-    bool connected = registerAsClient();
-    if (!connected) {
+    if (!registerAsClient()) {
         std::cerr << "Could not connect!\n";
         return 1;
     }

@@ -16,7 +16,8 @@ bool parseArguments(int argc, char* argv[], argparse::ArgumentParser& args) {
         .help("Tracker port");
 
     args.add_argument(FLAG_CLIENT_TASK_CONFIG_PATH)
-        .help("Path to task file");
+        .help("Path to task file")
+        .default_value("");
 
     try {
         args.parse_args(argc, argv);
