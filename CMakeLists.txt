@@ -3,8 +3,22 @@ project(warpgate)
 
 set(CMAKE_CXX_STANDARD 23)
 
-add_subdirectory(external/rpclib)
-
+include(FetchContent)
+FetchContent_Declare(
+        json
+        GIT_REPOSITORY https://github.com/nlohmann/json.git
+        GIT_TAG v3.12.0
+)
+FetchContent_Declare(
+        rpclib
+        GIT_REPOSITORY https://github.com/rpclib/rpclib.git
+        GIT_TAG v2.3.0
+)
+FetchContent_Declare(
+        argparse
+        GIT_REPOSITORY https://github.com/p-ranav/argparse.git
+)
+FetchContent_MakeAvailable(json rpclib argparse)
 
 add_executable(warpgate
         src/main.cpp
@@ -23,15 +37,15 @@ add_executable(warpgate
         src/utils.h
 )
 target_compile_options(warpgate PRIVATE -Wall -Wextra -Wpedantic)
-target_include_directories(warpgate PUBLIC
-        external/argparse/include
-        external/rpclib/include
-        external/nlohmann/single_include
-        src)
+target_include_directories(warpgate PUBLIC src)
+
 target_link_libraries(warpgate PRIVATE rpc)
+target_link_libraries(warpgate PRIVATE argparse)
+target_link_libraries(warpgate PRIVATE nlohmann_json::nlohmann_json)
+
+set_target_properties(rpc PROPERTIES COMPILE_OPTIONS "-w")
+
 add_dependencies(warpgate tasklib)
-
-
 add_library(tasklib SHARED
         src/tasklib/tasklib.cpp)
 target_include_directories(tasklib PUBLIC src)

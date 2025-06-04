@@ -36,7 +36,8 @@ def main():
     parser = argparse.ArgumentParser(prog='build-script')
     parser.add_argument('--release', action='store_true', dest='release')
     parser.add_argument('-c', '--configure', action='store_true', dest='configure')
-    parser.add_argument('--clear', action='store_true', dest='clear')
+    parser.add_argument('--clean', action='store_true', dest='clean')
+    parser.add_argument('--no-build', action='store_true', dest='no_build')
     parser.add_argument('-r', '--run', action='store_true', dest='run')
     parser.add_argument('remainder', nargs='*')
 
@@ -47,11 +48,13 @@ def main():
     if '--' in args.remainder:
         args.remainder = args.remainder[args.remainder.index('--') + 1 : ]
 
-    if args.clear:
+    if args.clean:
         clear_build_output(build_type)
     if args.configure:
        configure_build_system(build_type)
-    status = build_target('warpgate', build_type)
+    status = 0
+    if not args.no_build:
+        status = build_target('warpgate', build_type)
     if args.run:
         if status != 0:
             print("Build failed, aborting run!")

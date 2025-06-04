@@ -86,6 +86,7 @@ void Tracker::refreshClientList() {
         for (auto it = mRpcClients.begin(); it != mRpcClients.cend(); ) {
             auto& clientId = it->first;
             auto& lastHeartbeat = it->second.lastHeartbeat;
+
             if (std::chrono::duration_cast<std::chrono::milliseconds>(
                     now - lastHeartbeat).count() > CLIENT_HEARTBEAT_MAX_INTERVAL_MS) {
                 mRpcClients.erase(it++);
