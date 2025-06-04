@@ -43,7 +43,8 @@ target_link_libraries(warpgate PRIVATE rpc)
 target_link_libraries(warpgate PRIVATE argparse)
 target_link_libraries(warpgate PRIVATE nlohmann_json::nlohmann_json)
 
-set_target_properties(rpc PROPERTIES COMPILE_OPTIONS "-w")
+get_target_property(RPC_INCLUDE_DIRS rpc INTERFACE_INCLUDE_DIRECTORIES)
+target_include_directories(warpgate SYSTEM PRIVATE ${RPC_INCLUDE_DIRS})
 
 add_dependencies(warpgate tasklib)
 add_library(tasklib SHARED

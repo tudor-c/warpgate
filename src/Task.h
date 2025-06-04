@@ -4,11 +4,7 @@
 #include <vector>
 #include <unordered_map>
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wclass-memaccess"
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include <rpc/msgpack.hpp>
-#pragma GCC diagnostic pop
 
 
 struct Subtask {
