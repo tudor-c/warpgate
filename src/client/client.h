@@ -7,10 +7,9 @@
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include <rpc/client.h>
 #include <rpc/server.h>
-
-#include "Task.h"
 #pragma GCC diagnostic pop
 
+#include "Task.h"
 
 class Client {
 
