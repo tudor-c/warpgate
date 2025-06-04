@@ -4,6 +4,7 @@
 
 #include "tracker.h"
 #include "consts.h"
+#include "Task.h"
 
 Tracker::Tracker() : mRpcServer(TRACKER_PORT) {
     std::cout << std::format("\nStarting tracker at {}:{} 🚀\n\n",
@@ -22,6 +23,9 @@ Tracker::Tracker() : mRpcServer(TRACKER_PORT) {
         for (const auto& client : mRpcClients | std::views::values) {
             client.worker->call(RPC_TEST_ANNOUNCEMENT_BROADCAST, mess);
         }
+    });
+    mRpcServer.bind(RPC_SUBMIT_TASK, [this](const Task& task) {
+        task.printStructure();
     });
 }
 

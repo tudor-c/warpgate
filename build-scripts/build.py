@@ -5,7 +5,7 @@ import shutil
 from utils import *
 
 
-def build_target(target: str, build_type: BuildType = BuildType.DEBUG):
+def build_target(target: str, build_type: BuildType = BuildType.DEBUG) -> int:
     build_path = build_path_by_type(build_type)
     try:
         os.mkdir(build_path)
@@ -13,9 +13,9 @@ def build_target(target: str, build_type: BuildType = BuildType.DEBUG):
         pass
     except FileNotFoundError:
         print("You must configure first! Run `./build --configure`")
-        return
+        return 1
     command = f'cmake --build {build_path} --target {target}'
-    os.system(command)
+    return os.system(command)
 
 def configure_build_system(build_type: BuildType):
     build_path = build_path_by_type(build_type)
@@ -51,10 +51,13 @@ def main():
         clear_build_output(build_type)
     if args.configure:
        configure_build_system(build_type)
-    build_target('warpgate', build_type)
+    status = build_target('warpgate', build_type)
     if args.run:
-        target_arguments = ' '.join(args.remainder)
-        os.system(f'./{build_path_by_type(build_type)}/warpgate {target_arguments}')
+        if status != 0:
+            print("Build failed, aborting run!")
+        else:
+            target_arguments = ' '.join(args.remainder)
+            os.system(f'./{build_path_by_type(build_type)}/warpgate {target_arguments}')
 
 
 if __name__ == "__main__":

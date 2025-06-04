@@ -3,6 +3,7 @@
 // Suppress warning from external library
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wclass-memaccess" // TODO maybe remove
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include <rpc/client.h>
 #include <rpc/server.h>
 #pragma GCC diagnostic pop

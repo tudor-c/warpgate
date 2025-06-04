@@ -19,12 +19,16 @@ Client::Client(
         LOCALHOST, mOwnServer.port());
 
     if (!taskConfigPath.empty()) {
+        std::unique_ptr<Task> task;
         try {
-            Task task(taskConfigPath);
-            task.print();
+            task = std::make_unique<Task>(taskConfigPath);
         }
         catch (std::runtime_error& e) {
             std::cerr << e.what() << '\n';
+        }
+
+        if (task) {
+            registerTask(*task);
         }
     }
 }
@@ -78,6 +82,10 @@ void Client::unregisterAsClient() {
     std::cout << std::format("Unregistered as worker for tracker at {}:{}\n",
         mTrackerHost, mTrackerPort);
     mClient.call(RPC_UNREGISTER_CLIENT, mOwnId);
+}
+
+void Client::registerTask(const Task& task) {
+    mClient.call(RPC_SUBMIT_TASK, task);
 }
 
 int Client::getOwnPort() const {

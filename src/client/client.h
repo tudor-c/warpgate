@@ -3,10 +3,13 @@
 #include <string>
 
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wclass-memaccess"
+#pragma GCC diagnostic ignored "-Wclass-memaccess" // TODO maybe remove
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include <rpc/client.h>
 #include <rpc/rpc_error.h>
 #include <rpc/server.h>
+
+#include "Task.h"
 #pragma GCC diagnostic pop
 
 
@@ -30,6 +33,8 @@ private:
     void teardown();
 
     void unregisterAsClient();
+
+    void registerTask(const Task&);
 
     int getOwnPort() const;
 

@@ -10,6 +10,8 @@
 
 using json = nlohmann::json;
 
+Task::Task(): mRoot(0) {}
+
 Task::Task(const std::string& path) {
     json config;
     if (std::ifstream file(path); file.is_open()) {
@@ -45,7 +47,10 @@ Task::Task(const std::string& path) {
     }
 }
 
-void Task::print() {
+Task::Task(const Task &other) :
+    mName(other.mName), mRoot(other.mRoot), mSubtasks(other.mSubtasks) {}
+
+void Task::printStructure() const {
     std::cout << std::format("Task: {}, root: {}, subtasks:\n", mName, mRoot);
     for (const auto &subtask : mSubtasks | std::views::values) {
         std::print(" - id: {}, name: {}, dependsOn: {}\n",
