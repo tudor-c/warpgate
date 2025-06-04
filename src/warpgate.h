@@ -16,12 +16,12 @@ private:
     int mArgc;
     const char **mArgv;
 
-    bool isTrackerSelected = false;
-    bool isClientSelected = false;
+    bool mIsTrackerSelected = false;
+    bool mIsClientSelected = false;
 
     // client options
-    std::string mTrackerHost = "";
+    std::string mTrackerHost;
     int mTrackerPort = 0;
-    std::string mTaskConfigPath = "";
+    std::string mTaskConfigPath;
     bool mTrackerTestArg = false;
 };

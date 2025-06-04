@@ -27,6 +27,8 @@ public:
 
 private:
 
+    void teardown();
+
     void unregisterAsClient();
 
     int getOwnPort() const;

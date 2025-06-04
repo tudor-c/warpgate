@@ -14,15 +14,17 @@ int Warpgate::run() {
         return 1;
     }
 
-    if (isTrackerSelected) {
+    if (mIsTrackerSelected) {
         Tracker tracker;
         return tracker.run();
     }
-    if (isClientSelected) {
+    if (mIsClientSelected) {
+        // can be a worker only if it isn't an Acquirer TODO add flag for this
+        bool registerAsWorker = mTaskConfigPath.empty();
         Client client(
             mTrackerHost,
             mTrackerPort,
-            true, /* TODO */
+            registerAsWorker,
             mTaskConfigPath);
         return client.run();
     }
@@ -68,8 +70,8 @@ bool Warpgate::parseArgs(int argc, const char* argv[]) {
         return false;
     }
 
-    isTrackerSelected = program.is_subcommand_used(TRACKER_SUBPARSER);
-    isClientSelected = program.is_subcommand_used(CLIENT_SUBPARSER);
+    mIsTrackerSelected = program.is_subcommand_used(TRACKER_SUBPARSER);
+    mIsClientSelected = program.is_subcommand_used(CLIENT_SUBPARSER);
 
     return true;
 }

@@ -47,9 +47,7 @@ int Client::run() {
     mClient.call(RPC_TEST_ANNOUNCEMENT,
         std::format("Hello world! I'm {}:{}\n", LOCALHOST, mOwnServer.port()));
 
-    // teardown
-    mServerThread.join();
-    unregisterAsClient();
+    teardown();
     return 0;
 }
 
@@ -69,6 +67,11 @@ bool Client::registerAsClient() {
     mClient.call(RPC_TEST_METHOD);
 
     return true;
+}
+
+void Client::teardown() {
+    mServerThread.join();
+    unregisterAsClient();
 }
 
 void Client::unregisterAsClient() {
