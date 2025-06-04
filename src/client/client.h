@@ -6,7 +6,6 @@
 #pragma GCC diagnostic ignored "-Wclass-memaccess" // TODO maybe remove
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include <rpc/client.h>
-#include <rpc/rpc_error.h>
 #include <rpc/server.h>
 
 #include "Task.h"
@@ -36,6 +35,8 @@ private:
 
     void registerTask(const Task&);
 
+    std::thread startHeartbeatThread();
+
     int getOwnPort() const;
 
     int mOwnId = -1;  // unique id assigned by host on client creation
@@ -47,4 +48,5 @@ private:
 
     rpc::server mOwnServer;
     std::thread mServerThread;
+    std::thread mHeartbeatThread;
 };

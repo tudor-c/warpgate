@@ -6,6 +6,7 @@ constexpr auto RPC_UNREGISTER_CLIENT = "unregisterClient";
 constexpr auto RPC_TEST_METHOD = "testMethod";
 constexpr auto RPC_SEND_FILE_TEST = "sendFile";
 constexpr auto RPC_SUBMIT_TASK = "submitTask";
+constexpr auto RPC_HEARTBEAT = "heartbeat";
 
 // RPC Client function names
 constexpr auto RPC_TEST_ANNOUNCEMENT = "testAnnounce";
@@ -31,3 +32,6 @@ constexpr auto JSON_TASK_ROOT = "root";
 constexpr auto JSON_TASK_FUNCTION = "function";
 constexpr auto JSON_TASK_DEPENDS_ON = "depends_on";
 
+constexpr int CLIENT_HEARTBEAT_PERIOD_MS = 500;
+constexpr int CLIENT_HEARTBEAT_MAX_INTERVAL_MS = 1000;
+constexpr int TRACKER_HEARTBEAT_CHECK_INTERVAL_MS = 50;

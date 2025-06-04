@@ -1,6 +1,7 @@
 #include <format>
 #include <iostream>
 #include <ranges>
+#include <print>
 
 #include "tracker.h"
 #include "consts.h"
@@ -9,6 +10,10 @@
 Tracker::Tracker() : mRpcServer(TRACKER_PORT) {
     std::cout << std::format("\nStarting tracker at {}:{} 🚀\n\n",
         LOCALHOST, mRpcServer.port());
+
+    mHeartbeatCheckThread = std::thread([this] {
+        this->refreshClientList();
+    });
 
     mRpcServer.bind(RPC_REGISTER_CLIENT, [this](const std::string &host, int port) {
         return this->registerWorker(host, port);
@@ -27,6 +32,9 @@ Tracker::Tracker() : mRpcServer(TRACKER_PORT) {
     mRpcServer.bind(RPC_SUBMIT_TASK, [this](const Task& task) {
         task.printStructure();
     });
+    mRpcServer.bind(RPC_HEARTBEAT, [this](const int clientId) {
+        this->refreshClientHeartbeat(clientId);
+    });
 }
 
 int Tracker::run() {
@@ -41,8 +49,9 @@ int Tracker::registerWorker(const std::string &host, int port) {
 
     mRpcClients[id] = Client {
         socketAddr,
-        std::make_unique<rpc::client>(host, port)
-    };
+        std::make_unique<rpc::client>(host, port),
+        std::chrono::system_clock::now()};
+
     printWorkers();
     return id;
 }
@@ -69,5 +78,31 @@ int Tracker::generateNewClientId() const {
         id = std::rand();
     }
     return id;
+}
+
+void Tracker::refreshClientList() {
+    while (true) {
+        const auto now = std::chrono::system_clock::now();
+        for (auto it = mRpcClients.begin(); it != mRpcClients.cend(); ) {
+            auto& clientId = it->first;
+            auto& lastHeartbeat = it->second.lastHeartbeat;
+            if (std::chrono::duration_cast<std::chrono::milliseconds>(
+                    now - lastHeartbeat).count() > CLIENT_HEARTBEAT_MAX_INTERVAL_MS) {
+                mRpcClients.erase(it++);
+                std::print("Removed client {} after no heartbeat\n", clientId);
+            }
+            else {
+                ++it;
+            }
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(TRACKER_HEARTBEAT_CHECK_INTERVAL_MS));
+    }
+}
+
+void Tracker::refreshClientHeartbeat(int clientId) {
+    if (!mRpcClients.contains(clientId)) {
+        return;
+    }
+    mRpcClients.at(clientId).lastHeartbeat = std::chrono::system_clock::now();
 }
 

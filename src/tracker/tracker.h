@@ -26,11 +26,17 @@ public:
     struct Client {
         std::string socketAddr;
         std::unique_ptr<rpc::client> worker;
+        std::chrono::time_point<std::chrono::system_clock> lastHeartbeat;
     };
 
 private:
-    std::unordered_map<int, Client> mRpcClients;
+    std::unordered_map<int, Client> mRpcClients; // TODO lock behind RW guard
     rpc::server mRpcServer;
+    std::thread mHeartbeatCheckThread;
 
     int generateNewClientId() const;
+
+    void refreshClientList();
+
+    void refreshClientHeartbeat(int clientId);
 };

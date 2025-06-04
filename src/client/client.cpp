@@ -1,5 +1,6 @@
 #include <format>
 #include <iostream>
+#include <print>
 
 #include "client.h"
 #include "consts.h"
@@ -47,6 +48,7 @@ int Client::run() {
         std::cout << "Announcement from another peer: " << mess << "\n";
     });
     mServerThread = std::thread(&rpc::server::run, &mOwnServer);
+    mHeartbeatThread = startHeartbeatThread();
 
     mClient.call(RPC_TEST_ANNOUNCEMENT,
         std::format("Hello world! I'm {}:{}\n", LOCALHOST, mOwnServer.port()));
@@ -66,8 +68,8 @@ bool Client::registerAsClient() {
     }
     mClient.clear_timeout();
 
-    std::cout << std::format("Registered as worker for tracker at {}:{}\n",
-        mTrackerHost, mTrackerPort);
+    std::print("Registered as worker for tracker at {}:{}, own ID is {}\n",
+        mTrackerHost, mTrackerPort, mOwnId);
     mClient.call(RPC_TEST_METHOD);
 
     return true;
@@ -86,6 +88,15 @@ void Client::unregisterAsClient() {
 
 void Client::registerTask(const Task& task) {
     mClient.call(RPC_SUBMIT_TASK, task);
+}
+
+std::thread Client::startHeartbeatThread() {
+    return std::thread([this] {
+        while (true) {
+            mClient.call(RPC_HEARTBEAT, mOwnId);
+            std::this_thread::sleep_for(std::chrono::milliseconds(CLIENT_HEARTBEAT_PERIOD_MS));
+        }
+    });
 }
 
 int Client::getOwnPort() const {
