@@ -1,7 +1,6 @@
 #include <format>
 #include <iostream>
 #include <ranges>
-#include <print>
 
 #include "tracker.h"
 #include "consts.h"
@@ -86,10 +85,13 @@ void Tracker::refreshClientList() {
         const auto now = std::chrono::system_clock::now();
         lg::debug("it");
         for (auto it = mRpcClients.begin(); it != mRpcClients.cend(); ) {
+            auto& clientId = it->first;
+            auto& lastHeartbeat = it->second.lastHeartbeat;
+
             if (std::chrono::duration_cast<std::chrono::milliseconds>(
-                    now - it->second.lastHeartbeat).count() > CLIENT_HEARTBEAT_MAX_INTERVAL_MS) {
+                    now - lastHeartbeat).count() > CLIENT_HEARTBEAT_MAX_INTERVAL_MS) {
+                lg::info("Removed client {} after no heartbeat", clientId);
                 mRpcClients.erase(it++);
-                lg::info("Removed client {} after no heartbeat", it->first);
             } else {
                 ++it;
             }
