@@ -1,5 +1,4 @@
 #include <format>
-#include <iostream>
 #include <ranges>
 
 #include "tracker.h"
@@ -83,7 +82,6 @@ int Tracker::generateNewClientId() const {
 void Tracker::refreshClientList() {
     while (true) {
         const auto now = std::chrono::system_clock::now();
-        lg::debug("it");
         for (auto it = mRpcClients.begin(); it != mRpcClients.cend(); ) {
             auto& clientId = it->first;
             auto& lastHeartbeat = it->second.lastHeartbeat;

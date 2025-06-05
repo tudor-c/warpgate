@@ -1,12 +1,12 @@
 #include <format>
 #include <fstream>
-#include <iostream>
-#include <print>
 
 #include <nlohmann/json.hpp>
 
 #include "consts.h"
 #include "Task.h"
+
+#include "log.h"
 
 using json = nlohmann::json;
 
@@ -51,15 +51,28 @@ Task::Task(const Task &other) :
     mName(other.mName), mRoot(other.mRoot), mSubtasks(other.mSubtasks) {}
 
 void Task::printStructure() const {
-    std::cout << std::format("Task: {}, root: {}, subtasks:\n", mName, mRoot);
+    std::string subtaskInfo;
+    bool first = true;
     for (const auto &subtask : mSubtasks | std::views::values) {
-        std::print(" - id: {}, name: {}, dependsOn: {}\n",
+        if (!first) {
+            subtaskInfo += "\n";
+        }
+        first = false;
+        subtaskInfo += std::format(" - id: {}, name: {}, dependsOn: {}",
             subtask.id, subtask.functionName, subtask.dependsOn);
     }
+    lg::debug("Task: {}, root: {}, subtasks:\n{}", mName, mRoot, subtaskInfo);
 }
 
 std::vector<Subtask> Task::getAvailableSubtasks() const {
-    return {}; // TODO implement
+    return mSubtasks
+        | std::views::values
+        | std::views::filter([this](const Subtask& task) {
+            return std::ranges::all_of(task.dependsOn, [this](const auto& dependencyId) {
+                return mSubtasks.at(dependencyId).completed;
+            });
+        })
+        | std::ranges::to<std::vector<Subtask>>();
 }
 
 bool Task::isCompleted() const {
