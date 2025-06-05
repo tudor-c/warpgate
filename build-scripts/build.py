@@ -1,6 +1,7 @@
 #!/bin/python
 import argparse
 import shutil
+import sys
 
 from utils import *
 
@@ -55,12 +56,16 @@ def main():
     status = 0
     if not args.no_build:
         status = build_target('warpgate', build_type)
+
+    status_code = 0
     if args.run:
         if status != 0:
             print("Build failed, aborting run!")
+            status_code = 1
         else:
             target_arguments = ' '.join(args.remainder)
-            os.system(f'./{build_path_by_type(build_type)}/warpgate {target_arguments}')
+            status_code = os.system(f'./{build_path_by_type(build_type)}/warpgate {target_arguments}')
+    sys.exit(status_code)
 
 
 if __name__ == "__main__":

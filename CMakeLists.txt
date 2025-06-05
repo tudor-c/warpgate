@@ -18,7 +18,13 @@ FetchContent_Declare(
         argparse
         GIT_REPOSITORY https://github.com/p-ranav/argparse.git
 )
-FetchContent_MakeAvailable(json rpclib argparse)
+FetchContent_Declare(
+        spdlog
+        GIT_REPOSITORY https://github.com/gabime/spdlog.git
+        GIT_TAG v1.13.0
+)
+
+FetchContent_MakeAvailable(json rpclib argparse spdlog)
 
 add_executable(warpgate
         src/main.cpp
@@ -35,6 +41,7 @@ add_executable(warpgate
         src/Task.h
         src/utils.cpp
         src/utils.h
+        src/log.h
 )
 target_compile_options(warpgate PRIVATE -Wall -Wextra -Wpedantic)
 target_include_directories(warpgate PUBLIC src)
@@ -42,6 +49,12 @@ target_include_directories(warpgate PUBLIC src)
 target_link_libraries(warpgate PRIVATE rpc)
 target_link_libraries(warpgate PRIVATE argparse)
 target_link_libraries(warpgate PRIVATE nlohmann_json::nlohmann_json)
+target_link_libraries(warpgate PRIVATE spdlog::spdlog)
+
+target_precompile_headers(warpgate PRIVATE
+        <spdlog/spdlog.h>
+        <spdlog/sinks/stdout_color_sinks.h>
+)
 
 get_target_property(RPC_INCLUDE_DIRS rpc INTERFACE_INCLUDE_DIRECTORIES)
 target_include_directories(warpgate SYSTEM PRIVATE ${RPC_INCLUDE_DIRS})

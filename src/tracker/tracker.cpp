@@ -6,9 +6,10 @@
 #include "tracker.h"
 #include "consts.h"
 #include "Task.h"
+#include "log.h"
 
 Tracker::Tracker() : mRpcServer(TRACKER_PORT) {
-    std::cout << std::format("\nStarting tracker at {}:{} 🚀\n\n",
+    lg::info("Starting tracker at {}:{} 🚀",
         LOCALHOST, mRpcServer.port());
 
     mHeartbeatCheckThread = std::thread([this] {
@@ -22,7 +23,7 @@ Tracker::Tracker() : mRpcServer(TRACKER_PORT) {
         this->unregisterWorker(id);
     });
     mRpcServer.bind(RPC_TEST_METHOD, [] {
-        std::cout << "test method called\n";
+        lg::debug("test method called");
     });
     mRpcServer.bind(RPC_TEST_ANNOUNCEMENT, [this](const std::string& mess) {
         for (const auto& client : mRpcClients | std::views::values) {
@@ -44,7 +45,7 @@ int Tracker::run() {
 
 int Tracker::registerWorker(const std::string &host, int port) {
     // TODO check duplicates
-    int id = generateNewClientId();
+    const int id = generateNewClientId();
     const std::string socketAddr = socketAddress(host, port);
 
     mRpcClients[id] = Client {
@@ -61,11 +62,11 @@ void Tracker::unregisterWorker(int id) {
 }
 
 void Tracker::printWorkers() const {
-    std::cout << "Workers:\n";
+    std::string workersInfo = "Workers:";
     for (const auto& client: mRpcClients | std::views::values) {
-        auto& socketAddr = client.socketAddr;
-        std::cout << std::format("  {}\n", socketAddr);
+        workersInfo += std::format("\n  {}", client.socketAddr);
     }
+    lg::debug(workersInfo);
 }
 
 std::string Tracker::socketAddress(std::string host, int port) {
@@ -83,16 +84,13 @@ int Tracker::generateNewClientId() const {
 void Tracker::refreshClientList() {
     while (true) {
         const auto now = std::chrono::system_clock::now();
+        lg::debug("it");
         for (auto it = mRpcClients.begin(); it != mRpcClients.cend(); ) {
-            auto& clientId = it->first;
-            auto& lastHeartbeat = it->second.lastHeartbeat;
-
             if (std::chrono::duration_cast<std::chrono::milliseconds>(
-                    now - lastHeartbeat).count() > CLIENT_HEARTBEAT_MAX_INTERVAL_MS) {
+                    now - it->second.lastHeartbeat).count() > CLIENT_HEARTBEAT_MAX_INTERVAL_MS) {
                 mRpcClients.erase(it++);
-                std::print("Removed client {} after no heartbeat\n", clientId);
-            }
-            else {
+                lg::info("Removed client {} after no heartbeat", it->first);
+            } else {
                 ++it;
             }
         }

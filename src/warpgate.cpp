@@ -2,6 +2,7 @@
 
 #include "warpgate.h"
 #include "consts.h"
+#include "log.h"
 #include "tracker/tracker.h"
 #include "client/client.h"
 
@@ -10,6 +11,8 @@ Warpgate::Warpgate(int argc, const char* argv[]) :
 
 
 int Warpgate::run() {
+    lg::init();
+
     if (!parseArgs(mArgc, mArgv)) {
         return 1;
     }

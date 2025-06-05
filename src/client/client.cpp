@@ -4,6 +4,7 @@
 
 #include "client.h"
 #include "consts.h"
+#include "log.h"
 #include "../Task.h"
 
 Client::Client(
@@ -16,7 +17,7 @@ Client::Client(
         mClient(trackerHost, trackerPort),
         mOwnServer(FREE_PORT) {
 
-    std::cout << std::format("\nStarting worker at {}:{} 🌐\n\n",
+    lg::info("Starting worker at {}:{} 🌐",
         LOCALHOST, mOwnServer.port());
 
     if (!taskConfigPath.empty()) {
@@ -25,7 +26,7 @@ Client::Client(
             task = std::make_unique<Task>(taskConfigPath);
         }
         catch (std::runtime_error& e) {
-            std::cerr << e.what() << '\n';
+            spdlog::error(e.what());
         }
 
         if (task) {
@@ -40,12 +41,12 @@ Client::~Client() {
 
 int Client::run() {
     if (!registerAsClient()) {
-        std::cerr << "Could not connect!\n";
+        lg::error("Could not connect!");
         return 1;
     }
 
     mOwnServer.bind(RPC_TEST_ANNOUNCEMENT_BROADCAST, [](const std::string& mess) {
-        std::cout << "Announcement from another peer: " << mess << "\n";
+        lg::debug("Announcement from another peer: {}", mess);
     });
     mServerThread = std::thread(&rpc::server::run, &mOwnServer);
     mHeartbeatThread = startHeartbeatThread();
@@ -62,13 +63,13 @@ bool Client::registerAsClient() {
     try {
         mOwnId = mClient.call(RPC_REGISTER_CLIENT, LOCALHOST, getOwnPort()).as<int>();
     } catch (std::exception& e) {
-        std::cerr << std::format("Could not connect to tracker at {}:{}!\n {}\n",
+        lg::error("Could not connect to tracker at {}:{}!\n {}\n",
             mTrackerHost, mTrackerPort, e.what());
         return false;
     }
     mClient.clear_timeout();
 
-    std::print("Registered as worker for tracker at {}:{}, own ID is {}\n",
+    lg::info("Registered as worker for tracker at {}:{}, own ID is {}\n",
         mTrackerHost, mTrackerPort, mOwnId);
     mClient.call(RPC_TEST_METHOD);
 
@@ -81,7 +82,7 @@ void Client::teardown() {
 }
 
 void Client::unregisterAsClient() {
-    std::cout << std::format("Unregistered as worker for tracker at {}:{}\n",
+    lg::info("Unregistered as worker for tracker at {}:{}\n",
         mTrackerHost, mTrackerPort);
     mClient.call(RPC_UNREGISTER_CLIENT, mOwnId);
 }
