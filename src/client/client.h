@@ -6,7 +6,7 @@
 #include <rpc/server.h>
 
 #include "Task.h"
-#include "types.h"
+#include "utils.h"
 
 class Client {
 
@@ -21,9 +21,8 @@ public:
 
     auto run() -> int;
 
-    auto registerAsClient() -> bool;
-
 private:
+    auto registerAsClient() -> bool;
     auto startHeartbeatThread() -> std::thread;
     auto getOwnPort() const -> int;
 
@@ -32,7 +31,7 @@ private:
 
     auto teardown() -> void;
 
-    ClientId mOwnId = -1;  // unique id assigned by host on client creation
+    Id mOwnId = -1;  // unique id assigned by host on client creation
 
     const std::string mTrackerHost;
     const int mTrackerPort;

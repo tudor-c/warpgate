@@ -43,7 +43,6 @@ add_executable(warpgate
         src/utils.cpp
         src/utils.h
         src/log.h
-        src/types.h
 )
 target_compile_options(warpgate PRIVATE -Wall -Wextra -Wpedantic)
 target_include_directories(warpgate PUBLIC src)

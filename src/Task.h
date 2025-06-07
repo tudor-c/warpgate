@@ -6,17 +6,22 @@
 
 #include <rpc/msgpack.hpp>
 
-#include "types.h"
+#include "utils.h"
 
 
 struct Subtask {
-    SubtaskId id = -1;
-    std::string functionName;
-    std::vector<SubtaskId> dependsOn;
-    bool completed = false;
+    enum Status { AVAILABLE, ENQUEUED, COMPLETED};
 
-    MSGPACK_DEFINE(id, functionName, dependsOn, completed)
+
+    Id id = -1;
+    std::string functionName;
+    std::vector<Id> dependsOn;
+    Status status = AVAILABLE;
+
+    MSGPACK_DEFINE(id, functionName, dependsOn, status)
 };
+
+MSGPACK_ADD_ENUM(Subtask::Status);
 
 
 class Task {
@@ -33,6 +38,6 @@ public:
 
 private:
     std::string mName;
-    SubtaskId mRoot = 0;
-    std::unordered_map<SubtaskId, Subtask> mSubtasks;
+    Id mRoot = 0;
+    std::unordered_map<Id, Subtask> mSubtasks;
 };

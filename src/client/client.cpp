@@ -59,7 +59,7 @@ auto Client::run() -> int {
 auto Client::registerAsClient() -> bool {
     mTrackerConn.set_timeout(TIMEOUT_MS);
     try {
-        mOwnId = mTrackerConn.call(RPC_REGISTER_CLIENT, LOCALHOST, getOwnPort()).as<ClientId>();
+        mOwnId = mTrackerConn.call(RPC_REGISTER_CLIENT, LOCALHOST, getOwnPort()).as<Id>();
     } catch (std::exception& e) {
         lg::error("Could not connect to tracker at {}:{}!\n {}\n",
             mTrackerHost, mTrackerPort, e.what());

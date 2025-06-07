@@ -3,7 +3,8 @@
 #include <rpc/client.h>
 #include <rpc/server.h>
 
-#include "types.h"
+#include "Task.h"
+#include "utils.h"
 
 class Tracker {
 
@@ -11,12 +12,6 @@ public:
     Tracker();
 
     auto run() -> int;
-
-    auto registerWorker(const std::string &host, int port) -> ClientId;
-    auto unregisterWorker(ClientId id) -> void;
-    auto printWorkers() const -> void;
-
-    static auto socketAddress(const std::string &host, int port) -> std::string;
 
     struct Client {
         std::string socketAddr;
@@ -26,14 +21,22 @@ public:
     };
 
 private:
-    std::unordered_map<ClientId, Client> mClients; // TODO lock behind RW guard
+    std::unordered_map<Id, Client> mClients; // TODO lock behind RW guard
     rpc::server mRpcServer;
     std::thread mHeartbeatCheckThread;
+    std::unordered_map<Id, Task> mTasks;
+
+    static auto socketAddress(const std::string &host, int port) -> std::string;
 
     auto bindRpcServerFunctions() -> void;
-    auto generateNewClientId() const -> ClientId;
+
+    auto registerWorker(const std::string &host, int port) -> Id;
+    auto unregisterWorker(Id id) -> void;
+    auto printWorkers() const -> void;
+
+    auto registerTask(const Task&) -> void;
+    auto dispatchAvailableSubtasksByTask(Id taskId) -> void;
 
     auto refreshClientListLoop() -> void;
-    auto refreshClientHeartbeat(ClientId clientId) -> void;
-
+    auto refreshClientHeartbeat(Id clientId) -> void;
 };

@@ -27,6 +27,7 @@ Task::Task(const std::string& path) {
                 return true;
             }
         }
+        
         return false;
     };
 
@@ -43,7 +44,7 @@ Task::Task(const std::string& path) {
         auto& id = entry.at(JSON_TASK_ID);
         auto& functionName = entry.at(JSON_TASK_FUNCTION);
         auto& dependsOn = entry.at(JSON_TASK_DEPENDS_ON);
-        mSubtasks.emplace(id, Subtask {id, functionName, dependsOn, false});
+        mSubtasks.emplace(id, Subtask {id, functionName, dependsOn, Subtask::AVAILABLE});
     }
 }
 
@@ -68,13 +69,13 @@ auto Task::getAvailableSubtasks() const -> std::vector<Subtask> {
     return mSubtasks
         | std::views::values
         | std::views::filter([this](const Subtask& task) {
-            return !task.completed && std::ranges::all_of(task.dependsOn, [this](const auto& dependencyId) {
-                return mSubtasks.at(dependencyId).completed;
+            return task.status == Subtask::AVAILABLE && std::ranges::all_of(task.dependsOn, [this](const Id dependencyId) {
+                return mSubtasks.at(dependencyId).status == Subtask::COMPLETED;
             });
         })
         | std::ranges::to<std::vector<Subtask>>();
 }
 
 auto Task::isCompleted() const -> bool {
-    return mSubtasks.at(mRoot).completed;
+    return mSubtasks.at(mRoot).status;
 }

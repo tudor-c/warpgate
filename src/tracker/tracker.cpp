@@ -22,9 +22,9 @@ auto Tracker::run() -> int {
     return 0;
 }
 
-auto Tracker::registerWorker(const std::string &host, int port) -> ClientId {
+auto Tracker::registerWorker(const std::string &host, int port) -> Id {
     // TODO check duplicates
-    const auto id = generateNewClientId();
+    const auto id = util::generateUniqueId();
     const auto socketAddr = socketAddress(host, port);
 
     mClients[id] = Client {
@@ -49,6 +49,19 @@ auto Tracker::printWorkers() const -> void {
     lg::debug(workersInfo);
 }
 
+auto Tracker::registerTask(const Task& task) -> void {
+    const auto id = util::generateUniqueId();
+    mTasks.insert({id, task});
+    dispatchAvailableSubtasksByTask(id);
+}
+
+auto Tracker::dispatchAvailableSubtasksByTask(const Id taskId) -> void {
+    auto subtasks = mTasks.at(taskId).getAvailableSubtasks();
+    for (auto& subtask : subtasks) {
+        // TODO --
+    }
+}
+
 auto Tracker::socketAddress(const std::string &host, const int port) -> std::string {
     return std::format("{}:{}", host, std::to_string(port));
 }
@@ -57,7 +70,7 @@ auto Tracker::bindRpcServerFunctions() -> void {
     mRpcServer.bind(RPC_REGISTER_CLIENT, [this](const std::string& host, const int port) {
         return this->registerWorker(host, port);
     });
-    mRpcServer.bind(RPC_UNREGISTER_CLIENT, [this](const ClientId id) {
+    mRpcServer.bind(RPC_UNREGISTER_CLIENT, [this](const Id id) {
         this->unregisterWorker(id);
     });
     mRpcServer.bind(RPC_TEST_ANNOUNCEMENT, [this](const std::string& mess) {
@@ -68,20 +81,12 @@ auto Tracker::bindRpcServerFunctions() -> void {
     mRpcServer.bind(RPC_SUBMIT_TASK, [this](const Task& task) {
         task.printStructure();
     });
-    mRpcServer.bind(RPC_HEARTBEAT, [this](const ClientId clientId) {
+    mRpcServer.bind(RPC_HEARTBEAT, [this](const Id clientId) {
         this->refreshClientHeartbeat(clientId);
     });
 }
 
-auto Tracker::generateNewClientId() const -> ClientId {
-    ClientId id = -1;
-    while (id == -1 || mClients.contains(id)) {
-        id = std::rand();
-    }
-    return id;
-}
-
-auto Tracker::refreshClientListLoop() -> void {
+auto Tracker::refreshClientListLoop() -> void { // TODO add end condition and thread joining
     while (true) {
         const auto now = std::chrono::system_clock::now();
         for (auto it = mClients.begin(); it != mClients.cend(); ) {
@@ -99,10 +104,11 @@ auto Tracker::refreshClientListLoop() -> void {
     }
 }
 
-auto Tracker::refreshClientHeartbeat(const ClientId clientId) -> void {
+auto Tracker::refreshClientHeartbeat(const Id clientId) -> void {
     if (!mClients.contains(clientId)) {
         return;
     }
     mClients.at(clientId).lastHeartbeat = std::chrono::system_clock::now();
 }
+
 
