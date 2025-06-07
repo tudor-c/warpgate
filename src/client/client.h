@@ -6,6 +6,7 @@
 #include <rpc/server.h>
 
 #include "Task.h"
+#include "types.h"
 
 class Client {
 
@@ -34,14 +35,14 @@ private:
 
     int getOwnPort() const;
 
-    int mOwnId = -1;  // unique id assigned by host on client creation
+    ClientId mOwnId = -1;  // unique id assigned by host on client creation
 
-    std::string mTrackerHost;
-    int mTrackerPort;
+    const std::string mTrackerHost;
+    const int mTrackerPort;
 
-    rpc::client mClient;
-
+    rpc::client mTrackerConn;
     rpc::server mOwnServer;
+
     std::thread mServerThread;
     std::thread mHeartbeatThread;
 };

@@ -3,6 +3,8 @@
 #include <rpc/client.h>
 #include <rpc/server.h>
 
+#include "types.h"
+
 class Tracker {
 
 public:
@@ -10,9 +12,9 @@ public:
 
     int run();
 
-    int registerWorker(const std::string& host, int port);
+    ClientId registerWorker(const std::string& host, int port);
 
-    void unregisterWorker(int id);
+    void unregisterWorker(ClientId id);
 
     void printWorkers() const;
 
@@ -26,15 +28,15 @@ public:
     };
 
 private:
-    std::unordered_map<int, Client> mRpcClients; // TODO lock behind RW guard
+    std::unordered_map<ClientId, Client> mClients; // TODO lock behind RW guard
     rpc::server mRpcServer;
     std::thread mHeartbeatCheckThread;
 
-    int generateNewClientId() const;
+    ClientId generateNewClientId() const;
 
     void refreshClientList();
 
-    void refreshClientHeartbeat(int clientId);
+    void refreshClientHeartbeat(ClientId clientId);
 
     void bindRpcServerFunctions();
 };

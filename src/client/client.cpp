@@ -12,7 +12,7 @@ Client::Client(
     const std::string &taskConfigPath) :
         mTrackerHost(trackerHost),
         mTrackerPort(trackerPort),
-        mClient(trackerHost, trackerPort),
+        mTrackerConn(trackerHost, trackerPort),
         mOwnServer(FREE_PORT) {
 
     lg::info("Starting worker at {}:{} 🌐",
@@ -49,7 +49,7 @@ int Client::run() {
     mServerThread = std::thread(&rpc::server::run, &mOwnServer);
     mHeartbeatThread = startHeartbeatThread();
 
-    mClient.call(RPC_TEST_ANNOUNCEMENT,
+    mTrackerConn.call(RPC_TEST_ANNOUNCEMENT,
         std::format("Hello world! I'm {}:{}\n", LOCALHOST, mOwnServer.port()));
 
     teardown();
@@ -57,19 +57,18 @@ int Client::run() {
 }
 
 bool Client::registerAsClient() {
-    mClient.set_timeout(TIMEOUT_MS);
+    mTrackerConn.set_timeout(TIMEOUT_MS);
     try {
-        mOwnId = mClient.call(RPC_REGISTER_CLIENT, LOCALHOST, getOwnPort()).as<int>();
+        mOwnId = mTrackerConn.call(RPC_REGISTER_CLIENT, LOCALHOST, getOwnPort()).as<ClientId>();
     } catch (std::exception& e) {
         lg::error("Could not connect to tracker at {}:{}!\n {}\n",
             mTrackerHost, mTrackerPort, e.what());
         return false;
     }
-    mClient.clear_timeout();
+    mTrackerConn.clear_timeout();
 
     lg::info("Registered as worker for tracker at {}:{}, own ID is {}\n",
         mTrackerHost, mTrackerPort, mOwnId);
-    mClient.call(RPC_TEST_METHOD);
 
     return true;
 }
@@ -82,17 +81,17 @@ void Client::teardown() {
 void Client::unregisterAsClient() {
     lg::info("Unregistered as worker for tracker at {}:{}\n",
         mTrackerHost, mTrackerPort);
-    mClient.call(RPC_UNREGISTER_CLIENT, mOwnId);
+    mTrackerConn.call(RPC_UNREGISTER_CLIENT, mOwnId);
 }
 
 void Client::registerTask(const Task& task) {
-    mClient.call(RPC_SUBMIT_TASK, task);
+    mTrackerConn.call(RPC_SUBMIT_TASK, task);
 }
 
 std::thread Client::startHeartbeatThread() {
     return std::thread([this] {
         while (true) {
-            mClient.call(RPC_HEARTBEAT, mOwnId);
+            mTrackerConn.call(RPC_HEARTBEAT, mOwnId);
             std::this_thread::sleep_for(std::chrono::milliseconds(CLIENT_HEARTBEAT_PERIOD_MS));
         }
     });

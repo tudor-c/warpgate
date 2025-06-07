@@ -3,7 +3,6 @@
 // RPC Tracker function names
 constexpr auto RPC_REGISTER_CLIENT = "registerClient";
 constexpr auto RPC_UNREGISTER_CLIENT = "unregisterClient";
-constexpr auto RPC_TEST_METHOD = "testMethod";
 constexpr auto RPC_SEND_FILE_TEST = "sendFile";
 constexpr auto RPC_SUBMIT_TASK = "submitTask";
 constexpr auto RPC_HEARTBEAT = "heartbeat";
