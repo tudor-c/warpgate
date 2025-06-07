@@ -16,4 +16,5 @@ class BuildType(Enum):
     RELEASE = 1
 
 def build_path_by_type(build_type: BuildType) -> str:
-    return DEBUG_DIR if build_type == BuildType.DEBUG else RELEASE_DIR
+    # return DEBUG_DIR if build_type == BuildType.DEBUG else RELEASE_DIR
+    return OUTPUT_DIR
