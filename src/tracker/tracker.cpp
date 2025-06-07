@@ -14,26 +14,7 @@ Tracker::Tracker() : mRpcServer(TRACKER_PORT) {
         this->refreshClientList();
     });
 
-    mRpcServer.bind(RPC_REGISTER_CLIENT, [this](const std::string &host, int port) {
-        return this->registerWorker(host, port);
-    });
-    mRpcServer.bind(RPC_UNREGISTER_CLIENT, [this](int id) {
-        this->unregisterWorker(id);
-    });
-    mRpcServer.bind(RPC_TEST_METHOD, [] {
-        lg::debug("test method called");
-    });
-    mRpcServer.bind(RPC_TEST_ANNOUNCEMENT, [this](const std::string& mess) {
-        for (const auto& client : mRpcClients | std::views::values) {
-            client.worker->call(RPC_TEST_ANNOUNCEMENT_BROADCAST, mess);
-        }
-    });
-    mRpcServer.bind(RPC_SUBMIT_TASK, [this](const Task& task) {
-        task.printStructure();
-    });
-    mRpcServer.bind(RPC_HEARTBEAT, [this](const int clientId) {
-        this->refreshClientHeartbeat(clientId);
-    });
+    this->bindRpcServerFunctions();
 }
 
 int Tracker::run() {
@@ -47,15 +28,16 @@ int Tracker::registerWorker(const std::string &host, int port) {
     const std::string socketAddr = socketAddress(host, port);
 
     mRpcClients[id] = Client {
-        socketAddr,
-        std::make_unique<rpc::client>(host, port),
-        std::chrono::system_clock::now()};
+        .socketAddr = socketAddr,
+        .worker = std::make_unique<rpc::client>(host, port),
+        .lastHeartbeat = std::chrono::system_clock::now(),
+        .isFree = true};
 
     printWorkers();
     return id;
 }
 
-void Tracker::unregisterWorker(int id) {
+void Tracker::unregisterWorker(const int id) {
     mRpcClients.erase(id);
 }
 
@@ -67,7 +49,7 @@ void Tracker::printWorkers() const {
     lg::debug(workersInfo);
 }
 
-std::string Tracker::socketAddress(std::string host, int port) {
+std::string Tracker::socketAddress(const std::string& host, const int port) {
     return std::format("{}:{}", host, std::to_string(port));
 }
 
@@ -98,10 +80,33 @@ void Tracker::refreshClientList() {
     }
 }
 
-void Tracker::refreshClientHeartbeat(int clientId) {
+void Tracker::refreshClientHeartbeat(const int clientId) {
     if (!mRpcClients.contains(clientId)) {
         return;
     }
     mRpcClients.at(clientId).lastHeartbeat = std::chrono::system_clock::now();
+}
+
+void Tracker::bindRpcServerFunctions() {
+    mRpcServer.bind(RPC_REGISTER_CLIENT, [this](const std::string &host, const int port) {
+        return this->registerWorker(host, port);
+    });
+    mRpcServer.bind(RPC_UNREGISTER_CLIENT, [this](const int id) {
+        this->unregisterWorker(id);
+    });
+    mRpcServer.bind(RPC_TEST_METHOD, [] {
+        lg::debug("test method called");
+    });
+    mRpcServer.bind(RPC_TEST_ANNOUNCEMENT, [this](const std::string& mess) {
+        for (const auto& client : mRpcClients | std::views::values) {
+            client.worker->call(RPC_TEST_ANNOUNCEMENT_BROADCAST, mess);
+        }
+    });
+    mRpcServer.bind(RPC_SUBMIT_TASK, [this](const Task& task) {
+        task.printStructure();
+    });
+    mRpcServer.bind(RPC_HEARTBEAT, [this](const int clientId) {
+        this->refreshClientHeartbeat(clientId);
+    });
 }
 

@@ -16,12 +16,13 @@ public:
 
     void printWorkers() const;
 
-    static std::string socketAddress(std::string host, int port);
+    static std::string socketAddress(const std::string& host, int port);
 
     struct Client {
         std::string socketAddr;
         std::unique_ptr<rpc::client> worker;
         std::chrono::time_point<std::chrono::system_clock> lastHeartbeat;
+        bool isFree;
     };
 
 private:
@@ -34,4 +35,6 @@ private:
     void refreshClientList();
 
     void refreshClientHeartbeat(int clientId);
+
+    void bindRpcServerFunctions();
 };

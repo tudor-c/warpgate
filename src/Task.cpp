@@ -68,7 +68,7 @@ std::vector<Subtask> Task::getAvailableSubtasks() const {
     return mSubtasks
         | std::views::values
         | std::views::filter([this](const Subtask& task) {
-            return std::ranges::all_of(task.dependsOn, [this](const auto& dependencyId) {
+            return !task.completed && std::ranges::all_of(task.dependsOn, [this](const auto& dependencyId) {
                 return mSubtasks.at(dependencyId).completed;
             });
         })
