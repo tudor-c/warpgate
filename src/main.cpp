@@ -1,6 +1,6 @@
 #include "warpgate.h"
 
-int main(int argc, const char* argv[]) {
+auto main(const int argc, const char *argv[]) -> int {
     Warpgate warpgate(argc, argv);
     return warpgate.run();
 }

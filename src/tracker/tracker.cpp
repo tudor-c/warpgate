@@ -11,18 +11,18 @@ Tracker::Tracker() : mRpcServer(TRACKER_PORT) {
         LOCALHOST, mRpcServer.port());
 
     mHeartbeatCheckThread = std::thread([this] {
-        this->refreshClientList();
+        this->refreshClientListLoop();
     });
 
     this->bindRpcServerFunctions();
 }
 
-int Tracker::run() {
+auto Tracker::run() -> int {
     mRpcServer.run();
     return 0;
 }
 
-ClientId Tracker::registerWorker(const std::string &host, int port) {
+auto Tracker::registerWorker(const std::string &host, int port) -> ClientId {
     // TODO check duplicates
     const auto id = generateNewClientId();
     const auto socketAddr = socketAddress(host, port);
@@ -37,11 +37,11 @@ ClientId Tracker::registerWorker(const std::string &host, int port) {
     return id;
 }
 
-void Tracker::unregisterWorker(const int id) {
+auto Tracker::unregisterWorker(const int id) -> void {
     mClients.erase(id);
 }
 
-void Tracker::printWorkers() const {
+auto Tracker::printWorkers() const -> void {
     std::string workersInfo = "Workers:";
     for (const auto& client: mClients | std::views::values) {
         workersInfo += std::format("\n  {}", client.socketAddr);
@@ -49,44 +49,11 @@ void Tracker::printWorkers() const {
     lg::debug(workersInfo);
 }
 
-std::string Tracker::socketAddress(const std::string& host, const int port) {
+auto Tracker::socketAddress(const std::string &host, const int port) -> std::string {
     return std::format("{}:{}", host, std::to_string(port));
 }
 
-ClientId Tracker::generateNewClientId() const {
-    ClientId id = -1;
-    while (id == -1 || mClients.contains(id)) {
-        id = std::rand();
-    }
-    return id;
-}
-
-void Tracker::refreshClientList() {
-    while (true) {
-        const auto now = std::chrono::system_clock::now();
-        for (auto it = mClients.begin(); it != mClients.cend(); ) {
-            auto& clientId = it->first;
-            auto& lastHeartbeat = it->second.lastHeartbeat;
-            if (std::chrono::duration_cast<std::chrono::milliseconds>(
-                    now - lastHeartbeat).count() > CLIENT_HEARTBEAT_MAX_INTERVAL_MS) {
-                lg::info("Removed client {} after no heartbeat", clientId);
-                mClients.erase(it++);
-            } else {
-                ++it;
-            }
-        }
-        std::this_thread::sleep_for(std::chrono::milliseconds(TRACKER_HEARTBEAT_CHECK_INTERVAL_MS));
-    }
-}
-
-void Tracker::refreshClientHeartbeat(const ClientId clientId) {
-    if (!mClients.contains(clientId)) {
-        return;
-    }
-    mClients.at(clientId).lastHeartbeat = std::chrono::system_clock::now();
-}
-
-void Tracker::bindRpcServerFunctions() {
+auto Tracker::bindRpcServerFunctions() -> void {
     mRpcServer.bind(RPC_REGISTER_CLIENT, [this](const std::string& host, const int port) {
         return this->registerWorker(host, port);
     });
@@ -104,5 +71,38 @@ void Tracker::bindRpcServerFunctions() {
     mRpcServer.bind(RPC_HEARTBEAT, [this](const ClientId clientId) {
         this->refreshClientHeartbeat(clientId);
     });
+}
+
+auto Tracker::generateNewClientId() const -> ClientId {
+    ClientId id = -1;
+    while (id == -1 || mClients.contains(id)) {
+        id = std::rand();
+    }
+    return id;
+}
+
+auto Tracker::refreshClientListLoop() -> void {
+    while (true) {
+        const auto now = std::chrono::system_clock::now();
+        for (auto it = mClients.begin(); it != mClients.cend(); ) {
+            auto& clientId = it->first;
+            auto& lastHeartbeat = it->second.lastHeartbeat;
+            if (std::chrono::duration_cast<std::chrono::milliseconds>(
+                    now - lastHeartbeat).count() > CLIENT_HEARTBEAT_MAX_INTERVAL_MS) {
+                lg::info("Removed client {} after no heartbeat", clientId);
+                mClients.erase(it++);
+            } else {
+                ++it;
+            }
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(TRACKER_HEARTBEAT_CHECK_INTERVAL_MS));
+    }
+}
+
+auto Tracker::refreshClientHeartbeat(const ClientId clientId) -> void {
+    if (!mClients.contains(clientId)) {
+        return;
+    }
+    mClients.at(clientId).lastHeartbeat = std::chrono::system_clock::now();
 }
 

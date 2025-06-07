@@ -6,14 +6,16 @@
 
 #include <rpc/msgpack.hpp>
 
+#include "types.h"
+
 
 struct Subtask {
-    int id;
-    bool completed = false;
+    SubtaskId id = -1;
     std::string functionName;
-    std::vector<int> dependsOn;
+    std::vector<SubtaskId> dependsOn;
+    bool completed = false;
 
-    MSGPACK_DEFINE(id, completed, functionName, dependsOn)
+    MSGPACK_DEFINE(id, functionName, dependsOn, completed)
 };
 
 
@@ -23,16 +25,14 @@ public:
     Task(const std::string& path);
     Task(const Task& other);
 
-    void printStructure() const;
-
-    std::vector<Subtask> getAvailableSubtasks() const;
-
-    bool isCompleted() const;
+    auto printStructure() const -> void;
+    auto getAvailableSubtasks() const -> std::vector<Subtask>;
+    auto isCompleted() const -> bool;
 
     MSGPACK_DEFINE(mName, mRoot, mSubtasks)
 
 private:
     std::string mName;
-    int mRoot;
-    std::unordered_map<int, Subtask> mSubtasks;
+    SubtaskId mRoot = 0;
+    std::unordered_map<SubtaskId, Subtask> mSubtasks;
 };

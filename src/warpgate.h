@@ -8,12 +8,12 @@ public:
 
     Warpgate(const Warpgate&) = delete;
 
-    int run();
+    auto run() -> int;
 
 private:
-    bool parseArgs(int argc, const char* argv[]);
+    auto parseArgs(int argc, const char *argv[]) -> bool;
 
-    int mArgc;
+    const int mArgc;
     const char **mArgv;
 
     bool mIsTrackerSelected = false;

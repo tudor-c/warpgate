@@ -37,7 +37,7 @@ Client::~Client() {
     unregisterAsClient();
 }
 
-int Client::run() {
+auto Client::run() -> int {
     if (!registerAsClient()) {
         lg::error("Could not connect!");
         return 1;
@@ -56,7 +56,7 @@ int Client::run() {
     return 0;
 }
 
-bool Client::registerAsClient() {
+auto Client::registerAsClient() -> bool {
     mTrackerConn.set_timeout(TIMEOUT_MS);
     try {
         mOwnId = mTrackerConn.call(RPC_REGISTER_CLIENT, LOCALHOST, getOwnPort()).as<ClientId>();
@@ -73,22 +73,22 @@ bool Client::registerAsClient() {
     return true;
 }
 
-void Client::teardown() {
+auto Client::teardown() -> void {
     mServerThread.join();
     unregisterAsClient();
 }
 
-void Client::unregisterAsClient() {
+auto Client::unregisterAsClient() -> void {
     lg::info("Unregistered as worker for tracker at {}:{}\n",
         mTrackerHost, mTrackerPort);
     mTrackerConn.call(RPC_UNREGISTER_CLIENT, mOwnId);
 }
 
-void Client::registerTask(const Task& task) {
+auto Client::registerTask(const Task &task) -> void {
     mTrackerConn.call(RPC_SUBMIT_TASK, task);
 }
 
-std::thread Client::startHeartbeatThread() {
+auto Client::startHeartbeatThread() -> std::thread {
     return std::thread([this] {
         while (true) {
             mTrackerConn.call(RPC_HEARTBEAT, mOwnId);
@@ -97,6 +97,6 @@ std::thread Client::startHeartbeatThread() {
     });
 }
 
-int Client::getOwnPort() const {
+auto Client::getOwnPort() const -> int {
     return mOwnServer.port();
 }

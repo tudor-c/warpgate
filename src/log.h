@@ -8,7 +8,7 @@ constexpr auto LOG_LEVEL = spdlog::level::debug;
 namespace lg {
     inline std::shared_ptr<spdlog::logger> logger;
 
-    inline void init() {
+    inline auto init() -> void {
         logger = spdlog::stdout_color_mt("warpgate");
         logger->set_pattern("%^[%H:%M:%S] [%l]%$ %v");
         logger->set_level(LOG_LEVEL);
@@ -16,38 +16,38 @@ namespace lg {
     }
 
     template<typename... Args>
-    inline void info(fmt::format_string<Args...> fmt, Args&&... args) {
+    inline auto info(fmt::format_string<Args...> fmt, Args &&... args) -> void {
         logger->info(fmt, std::forward<Args>(args)...);
     }
 
     template<typename... Args>
-    inline void warn(fmt::format_string<Args...> fmt, Args&&... args) {
+    inline auto warn(fmt::format_string<Args...> fmt, Args &&... args) -> void {
         logger->warn(fmt, std::forward<Args>(args)...);
     }
 
     template<typename... Args>
-    inline void error(fmt::format_string<Args...> fmt, Args&&... args) {
+    inline auto error(fmt::format_string<Args...> fmt, Args &&... args) -> void {
         logger->error(fmt, std::forward<Args>(args)...);
     }
 
     template<typename... Args>
-    inline void debug(fmt::format_string<Args...> fmt, Args&&... args) {
+    inline auto debug(fmt::format_string<Args...> fmt, Args &&... args) -> void {
         logger->debug(fmt, std::forward<Args>(args)...);
     }
 
-    inline void info(const std::string& msg) {
+    inline auto info(const std::string &msg) -> void {
         logger->info(msg);
     }
 
-    inline void warn(const std::string& msg) {
+    inline auto warn(const std::string &msg) -> void {
         logger->warn(msg);
     }
 
-    inline void error(const std::string& msg) {
+    inline auto error(const std::string &msg) -> void {
         logger->error(msg);
     }
 
-    inline void debug(const std::string& msg) {
+    inline auto debug(const std::string &msg) -> void {
         logger->debug(msg);
     }
 }

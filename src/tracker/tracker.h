@@ -10,15 +10,13 @@ class Tracker {
 public:
     Tracker();
 
-    int run();
+    auto run() -> int;
 
-    ClientId registerWorker(const std::string& host, int port);
+    auto registerWorker(const std::string &host, int port) -> ClientId;
+    auto unregisterWorker(ClientId id) -> void;
+    auto printWorkers() const -> void;
 
-    void unregisterWorker(ClientId id);
-
-    void printWorkers() const;
-
-    static std::string socketAddress(const std::string& host, int port);
+    static auto socketAddress(const std::string &host, int port) -> std::string;
 
     struct Client {
         std::string socketAddr;
@@ -32,11 +30,10 @@ private:
     rpc::server mRpcServer;
     std::thread mHeartbeatCheckThread;
 
-    ClientId generateNewClientId() const;
+    auto bindRpcServerFunctions() -> void;
+    auto generateNewClientId() const -> ClientId;
 
-    void refreshClientList();
+    auto refreshClientListLoop() -> void;
+    auto refreshClientHeartbeat(ClientId clientId) -> void;
 
-    void refreshClientHeartbeat(ClientId clientId);
-
-    void bindRpcServerFunctions();
 };

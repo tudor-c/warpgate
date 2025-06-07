@@ -5,6 +5,6 @@
 DynamicLibrary::DynamicLibrary(const std::string &path) :
     mHandle(dlopen(path.c_str(), RTLD_LAZY)) {}
 
-bool DynamicLibrary::isLoaded() const {
+auto DynamicLibrary::isLoaded() const -> bool {
     return mHandle != nullptr;
 }

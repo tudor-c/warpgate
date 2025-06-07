@@ -10,7 +10,7 @@
 
 using json = nlohmann::json;
 
-Task::Task(): mRoot(0) {}
+Task::Task() {}
 
 Task::Task(const std::string& path) {
     json config;
@@ -40,17 +40,17 @@ Task::Task(const std::string& path) {
         if (anyMissing(entry, {JSON_TASK_ID, JSON_TASK_FUNCTION, JSON_TASK_DEPENDS_ON})) {
             throw std::runtime_error("Missing subtask fields!\n");
         }
-        auto id = entry.at(JSON_TASK_ID);
-        auto functionName = entry.at(JSON_TASK_FUNCTION);
-        auto dependsOn = entry.at(JSON_TASK_DEPENDS_ON);
-        mSubtasks[id] = Subtask { id, false, functionName, dependsOn };
+        auto& id = entry.at(JSON_TASK_ID);
+        auto& functionName = entry.at(JSON_TASK_FUNCTION);
+        auto& dependsOn = entry.at(JSON_TASK_DEPENDS_ON);
+        mSubtasks.emplace(id, Subtask {id, functionName, dependsOn, false});
     }
 }
 
 Task::Task(const Task &other) :
     mName(other.mName), mRoot(other.mRoot), mSubtasks(other.mSubtasks) {}
 
-void Task::printStructure() const {
+auto Task::printStructure() const -> void {
     std::string subtaskInfo;
     bool first = true;
     for (const auto &subtask : mSubtasks | std::views::values) {
@@ -64,7 +64,7 @@ void Task::printStructure() const {
     lg::debug("Task: {}, root: {}, subtasks:\n{}", mName, mRoot, subtaskInfo);
 }
 
-std::vector<Subtask> Task::getAvailableSubtasks() const {
+auto Task::getAvailableSubtasks() const -> std::vector<Subtask> {
     return mSubtasks
         | std::views::values
         | std::views::filter([this](const Subtask& task) {
@@ -75,6 +75,6 @@ std::vector<Subtask> Task::getAvailableSubtasks() const {
         | std::ranges::to<std::vector<Subtask>>();
 }
 
-bool Task::isCompleted() const {
+auto Task::isCompleted() const -> bool {
     return mSubtasks.at(mRoot).completed;
 }

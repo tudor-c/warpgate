@@ -6,17 +6,17 @@ class DynamicLibrary {
 public:
     DynamicLibrary(const std::string& path);
 
-    bool isLoaded() const;
+    auto isLoaded() const -> bool;
 
     template<typename T>
-    T* loadFunction(const std::string& name) const;
+    auto loadFunction(const std::string &name) const -> T *;
 
 private:
     void* mHandle = nullptr;
 };
 
 template<typename T>
-T* DynamicLibrary::loadFunction(const std::string &name) const {
+auto DynamicLibrary::loadFunction(const std::string &name) const -> T * {
     if (!isLoaded()) {
         return nullptr;
     }

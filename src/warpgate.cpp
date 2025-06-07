@@ -6,11 +6,10 @@
 #include "tracker/tracker.h"
 #include "client/client.h"
 
-Warpgate::Warpgate(int argc, const char* argv[]) :
+Warpgate::Warpgate(const int argc, const char* argv[]) :
     mArgc(argc), mArgv(argv) {}
 
-
-int Warpgate::run() {
+auto Warpgate::run() -> int {
     lg::init();
 
     if (!parseArgs(mArgc, mArgv)) {
@@ -23,7 +22,7 @@ int Warpgate::run() {
     }
     if (mIsClientSelected) {
         // can be a worker only if it isn't an Acquirer TODO add flag for this
-        bool registerAsWorker = mTaskConfigPath.empty();
+        const bool registerAsWorker = mTaskConfigPath.empty();
         Client client(
             mTrackerHost,
             mTrackerPort,
@@ -34,7 +33,7 @@ int Warpgate::run() {
     return 0;
 }
 
-bool Warpgate::parseArgs(int argc, const char* argv[]) {
+auto Warpgate::parseArgs(const int argc, const char *argv[]) -> bool {
     argparse::ArgumentParser program("warpgate");
 
     const auto TRACKER_SUBPARSER = "tracker";

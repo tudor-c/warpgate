@@ -19,21 +19,18 @@ public:
 
     ~Client();
 
-    int run();
+    auto run() -> int;
 
-    bool registerAsClient();
+    auto registerAsClient() -> bool;
 
 private:
+    auto startHeartbeatThread() -> std::thread;
+    auto getOwnPort() const -> int;
 
-    void teardown();
+    auto unregisterAsClient() -> void;
+    auto registerTask(const Task &) -> void;
 
-    void unregisterAsClient();
-
-    void registerTask(const Task&);
-
-    std::thread startHeartbeatThread();
-
-    int getOwnPort() const;
+    auto teardown() -> void;
 
     ClientId mOwnId = -1;  // unique id assigned by host on client creation
 
