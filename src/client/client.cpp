@@ -48,7 +48,7 @@ auto Client::run() -> int {
     mServerThread = std::thread(&rpc::server::run, &mOwnServer);
     mHeartbeatThread = startHeartbeatThread();
     mTrackerConn.call(RPC_TEST_ANNOUNCEMENT,
-        std::format("Hello world! I'm {}:{}\n", LOCALHOST, mOwnServer.port()));
+        std::format("Hello world! I'm {}:{}", LOCALHOST, mOwnServer.port()));
 
     teardown();
     return 0;
@@ -96,7 +96,15 @@ auto Client::registerTask(const Task &task) -> void {
 }
 
 auto Client::receiveSubtask(const Subtask& subtask) -> bool  {
-    lg::debug("Accepted subtask: {}", subtask.functionName);
+    lg::debug("Accepted subtask, id={}, fn={}", subtask.id, subtask.functionName);
+
+    // perform work ...
+    auto th = std::thread([this, subtask] {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        mTrackerConn.call(RPC_ANNOUNCE_SUBTASK_COMPLETED, mOwnId, subtask.id);
+    });
+    th.detach();
+
     return true;
 }
 

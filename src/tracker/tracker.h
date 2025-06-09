@@ -27,9 +27,14 @@ private:
     std::unordered_map<Id, Client> mClients; // TODO lock behind RW guard
     rpc::server mRpcServer;
     std::unordered_map<Id, Task> mTasks;
+
+    // all subtasks from all tasks
+    std::unordered_map<Id, std::reference_wrapper<Subtask>> mAllSubtasks;
     std::queue<std::reference_wrapper<Subtask>> mSubtaskQueue;
     std::thread mHeartbeatCheckThread;
     std::thread mSubtaskDispatchThread;
+
+    std::atomic_int mCurrentUniqueId = 1;
 
     static auto socketAddress(const std::string &host, int port) -> std::string;
 
@@ -39,9 +44,12 @@ private:
     auto unregisterWorker(Id id) -> void;
     auto printWorkers() const -> void;
 
-    auto registerTask(Task) -> void;
+    auto registerTask(const Task&) -> void;
     auto dispatchSubtasksFromQueue() -> void;
+    auto markSubtaskCompleted(Id workerId, Id subtaskId) -> void;
 
     auto refreshClientList() -> void;
     auto refreshClientHeartbeat(Id clientId) -> void;
+
+    auto generateUniqueId() -> Id;
 };

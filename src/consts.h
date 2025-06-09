@@ -6,6 +6,7 @@ constexpr auto RPC_UNREGISTER_CLIENT = "unregisterClient";
 constexpr auto RPC_SEND_FILE_TEST = "sendFile";
 constexpr auto RPC_SUBMIT_TASK = "submitTask";
 constexpr auto RPC_HEARTBEAT = "heartbeat";
+constexpr auto RPC_ANNOUNCE_SUBTASK_COMPLETED = "markSubtaskCompleted";
 
 // RPC Client function names
 constexpr auto RPC_TEST_ANNOUNCEMENT = "testAnnounce";
@@ -27,7 +28,7 @@ constexpr auto FLAG_CLIENT_TASK_CONFIG_PATH = "--task";
 // JSON task config keys
 constexpr auto JSON_TASK_NAME = "name";
 constexpr auto JSON_SUBTASKS = "subtasks";
-constexpr auto JSON_TASK_ID = "id";
+constexpr auto JSON_TASK_INDEX = "index";
 constexpr auto JSON_TASK_ROOT = "root";
 constexpr auto JSON_TASK_FUNCTION = "function";
 constexpr auto JSON_TASK_DEPENDS_ON = "depends_on";

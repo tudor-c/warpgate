@@ -10,6 +10,14 @@
 
 using json = nlohmann::json;
 
+// Subtask::Subtask(const Subtask &other) :
+//     index(other.index),
+//     id(other.id),
+//     completedBy(other.completedBy),
+//     functionName(other.functionName),
+//     dependsOn(other.dependsOn),
+//     status(other.status) {}
+
 Task::Task() {}
 
 Task::Task(const std::string& path) {
@@ -35,21 +43,25 @@ Task::Task(const std::string& path) {
         throw std::runtime_error("Missing config name or subtasks section!\n");
     }
     mName = config.at(JSON_TASK_NAME);
-    mRoot = config.at(JSON_TASK_ROOT);
+    mRootIndex = config.at(JSON_TASK_ROOT);
 
     for (auto entry : config.at(JSON_SUBTASKS)) {
-        if (anyMissing(entry, {JSON_TASK_ID, JSON_TASK_FUNCTION, JSON_TASK_DEPENDS_ON})) {
+        if (anyMissing(entry, {JSON_TASK_INDEX, JSON_TASK_FUNCTION, JSON_TASK_DEPENDS_ON})) {
             throw std::runtime_error("Missing subtask fields!\n");
         }
-        auto& id = entry.at(JSON_TASK_ID);
+        auto& index = entry.at(JSON_TASK_INDEX);
         auto& functionName = entry.at(JSON_TASK_FUNCTION);
         auto& dependsOn = entry.at(JSON_TASK_DEPENDS_ON);
-        mSubtasks.emplace(id, Subtask {id, functionName, dependsOn, Subtask::AVAILABLE});
+        mSubtasks.emplace(index, Subtask {
+            .index = index,
+            .functionName = functionName,
+            .dependsOn = dependsOn,
+            .status = Subtask::AVAILABLE});
     }
 }
 
 Task::Task(const Task &other) :
-    mName(other.mName), mRoot(other.mRoot), mSubtasks(other.mSubtasks) {}
+    mName(other.mName), mRootIndex(other.mRootIndex), mSubtasks(other.mSubtasks) {}
 
 auto Task::printStructure() const -> void {
     std::string subtaskInfo;
@@ -60,29 +72,29 @@ auto Task::printStructure() const -> void {
         }
         first = false;
         subtaskInfo += std::format(" - id: {}, name: {}, dependsOn: {}",
-            subtask.id, subtask.functionName, subtask.dependsOn);
+            subtask.index, subtask.functionName, subtask.dependsOn);
     }
-    lg::debug("Task: {}, root: {}, subtasks:\n{}", mName, mRoot, subtaskInfo);
+    lg::debug("Task: {}, root: {}, subtasks:\n{}", mName, mRootIndex, subtaskInfo);
 }
 
-auto Task::getAvailableSubtasks(bool markAsEnqueued) -> std::vector<Subtask> {
-    std::vector<Subtask> result;
+auto Task::getAvailableSubtasks() -> std::vector<std::reference_wrapper<Subtask>> {
+    return mSubtasks
+        | std::views::values
+        | std::views::filter([this](const Subtask &subtask) {
+            return subtask.status == Subtask::AVAILABLE &&
+                std::ranges::all_of(subtask.dependsOn, [this](const Id dependencyId) {
+                  return mSubtasks.at(dependencyId).status == Subtask::COMPLETED;
+                });
+        })
+        | std::ranges::to<std::vector<std::reference_wrapper<Subtask>>>();
+}
 
-    for (auto &subtask: mSubtasks | std::views::values) {
-        const bool allDependenciesCompleted = std::ranges::all_of(subtask.dependsOn,
-            [this](const Id dependencyId) {
-                return mSubtasks.at(dependencyId).status == Subtask::COMPLETED;
-            });
-        if (subtask.status == Subtask::AVAILABLE && allDependenciesCompleted) {
-            result.push_back(subtask);
-            if (markAsEnqueued) {
-                subtask.status = Subtask::ENQUEUED;
-            }
-        }
-    }
-    return result;
+auto Task::getAllSubtasks() -> std::vector<std::reference_wrapper<Subtask>> {
+    return mSubtasks
+        | std::views::values
+        | std::ranges::to<std::vector<std::reference_wrapper<Subtask>>>();
 }
 
 auto Task::isCompleted() const -> bool {
-    return mSubtasks.at(mRoot).status;
+    return mSubtasks.at(mRootIndex).status;
 }

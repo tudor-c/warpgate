@@ -12,11 +12,6 @@ namespace util {
         return buffer;
     }
 
-    auto generateUniqueId() -> Id {
-        static std::atomic_int currentId = 1;
-        return currentId++;
-    }
-
     auto scheduleTask(const int intervalMs,
         const std::function<void()>& fn, const std::function<bool()>& shouldEnd) -> void {
         while (!shouldEnd()) {

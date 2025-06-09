@@ -3,32 +3,32 @@
   "root": 1,
   "subtasks": [
     {
-      "id": 1,
+      "index": 1,
       "function": "func1",
       "depends_on": [2, 3]
     },
     {
-      "id": 2,
+      "index": 2,
       "function": "func2",
       "depends_on": [4, 5]
     },
     {
-      "id": 3,
+      "index": 3,
       "function": "func3",
       "depends_on": [6]
     },
     {
-      "id": 4,
+      "index": 4,
       "function": "func4",
       "depends_on": []
     },
     {
-      "id": 5,
+      "index": 5,
       "function": "func5",
       "depends_on": []
     },
     {
-      "id": 6,
+      "index": 6,
       "function": "func6",
       "depends_on": []
     }

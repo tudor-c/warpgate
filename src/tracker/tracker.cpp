@@ -35,7 +35,7 @@ auto Tracker::run() -> int {
 
 auto Tracker::registerWorker(const std::string &host, int port) -> Id {
     // TODO check duplicates
-    const auto id = util::generateUniqueId();
+    const auto id = this->generateUniqueId();
     const auto socketAddr = socketAddress(host, port);
 
     mClients[id] = Client {
@@ -62,11 +62,19 @@ auto Tracker::printWorkers() const -> void {
     lg::debug(workersInfo);
 }
 
-auto Tracker::registerTask(Task task) -> void {
-    const auto taskId = util::generateUniqueId();
+auto Tracker::registerTask(const Task& task) -> void {
+    const auto taskId = this->generateUniqueId();
     mTasks.insert({taskId, task});
 
-    for (auto& subtask : mTasks.at(taskId).getAvailableSubtasks(true)) {
+    // assign unique Ids to all subtasks
+    for (const auto& subtask : mTasks.at(taskId).getAllSubtasks()) {
+        const auto id = this->generateUniqueId();
+        subtask.get().id = id;
+        mAllSubtasks.insert({id, std::ref(subtask)});
+    }
+
+    // enqueue newly available subtasks
+    for (auto& subtask : mTasks.at(taskId).getAvailableSubtasks()) {
         mSubtaskQueue.push(subtask);
     }
 }
@@ -77,6 +85,7 @@ auto Tracker::dispatchSubtasksFromQueue() -> void {
         | std::views::filter([](const auto& client) {
             return client.isWorker && client.isFree;
         });
+
     auto nextWorker = std::ranges::begin(availableWorkers);
 
     while (!mSubtaskQueue.empty()) {
@@ -93,14 +102,20 @@ auto Tracker::dispatchSubtasksFromQueue() -> void {
                 subtask.status = Subtask::SUBMITTED;
                 worker.isFree = false;
                 mSubtaskQueue.pop();
-                ++nextWorker;
-                break;
             }
-
-            lg::debug("Subtask {} NOT accepted by worker {}", subtask.functionName, worker.id);
+            else {
+                lg::debug("Subtask {} NOT accepted by worker {}", subtask.functionName, worker.id);
+            }
             ++nextWorker;
         }
     }
+}
+
+auto Tracker::markSubtaskCompleted(const Id workerId, const Id subtaskId) -> void {
+    mClients.at(workerId).isFree = true;
+    auto& subtask = mAllSubtasks.at(subtaskId).get();
+    subtask.status = Subtask::COMPLETED;
+    subtask.completedBy = workerId;
 }
 
 auto Tracker::socketAddress(const std::string &host, const int port) -> std::string {
@@ -126,16 +141,17 @@ auto Tracker::bindRpcServerFunctions() -> void {
     mRpcServer.bind(RPC_HEARTBEAT, [this](const Id clientId) {
         this->refreshClientHeartbeat(clientId);
     });
+    mRpcServer.bind(RPC_ANNOUNCE_SUBTASK_COMPLETED, [this](const Id workerId, const Id subtaskId) {
+        this->markSubtaskCompleted(workerId, subtaskId);
+    });
 }
 
 auto Tracker::refreshClientList() -> void {
     const auto now = std::chrono::system_clock::now();
     for (auto it = mClients.begin(); it != mClients.cend(); ) {
-        auto& clientId = it->first;
-        auto& lastHeartbeat = it->second.lastHeartbeat;
         if (std::chrono::duration_cast<std::chrono::milliseconds>(
-                now - lastHeartbeat).count() > CLIENT_HEARTBEAT_MAX_INTERVAL_MS) {
-            lg::info("Removed client {} after no heartbeat", clientId);
+                now - it->second.lastHeartbeat).count() > CLIENT_HEARTBEAT_MAX_INTERVAL_MS) {
+            lg::info("Removed client {} after no heartbeat", it->first);
             mClients.erase(it++);
         } else {
             ++it;
@@ -148,6 +164,10 @@ auto Tracker::refreshClientHeartbeat(const Id clientId) -> void {
         return;
     }
     mClients.at(clientId).lastHeartbeat = std::chrono::system_clock::now();
+}
+
+auto Tracker::generateUniqueId() -> Id {
+    return mCurrentUniqueId++;
 }
 
 
