@@ -18,6 +18,8 @@ Client::Client(
     lg::info("Starting worker at {}:{} 🌐",
         LOCALHOST, mOwnServer.port());
 
+    this->bindRcpServerFunctions();
+
     if (!taskConfigPath.empty()) {
         std::unique_ptr<Task> task;
         try {
@@ -43,12 +45,8 @@ auto Client::run() -> int {
         return 1;
     }
 
-    mOwnServer.bind(RPC_TEST_ANNOUNCEMENT_BROADCAST, [](const std::string& mess) {
-        lg::debug("Announcement from another peer: {}", mess);
-    });
     mServerThread = std::thread(&rpc::server::run, &mOwnServer);
     mHeartbeatThread = startHeartbeatThread();
-
     mTrackerConn.call(RPC_TEST_ANNOUNCEMENT,
         std::format("Hello world! I'm {}:{}\n", LOCALHOST, mOwnServer.port()));
 
@@ -56,18 +54,27 @@ auto Client::run() -> int {
     return 0;
 }
 
+auto Client::bindRcpServerFunctions() -> void {
+    mOwnServer.bind(RPC_TEST_ANNOUNCEMENT_BROADCAST, [](const std::string& mess) {
+        lg::debug("Announcement from another peer: {}", mess);
+    });
+    mOwnServer.bind(RPC_DISPATCH_SUBTASK, [this](const Subtask& subtask) {
+        return this->receiveSubtask(subtask);
+    });
+}
+
 auto Client::registerAsClient() -> bool {
     mTrackerConn.set_timeout(TIMEOUT_MS);
     try {
         mOwnId = mTrackerConn.call(RPC_REGISTER_CLIENT, LOCALHOST, getOwnPort()).as<Id>();
     } catch (std::exception& e) {
-        lg::error("Could not connect to tracker at {}:{}!\n {}\n",
+        lg::error("Could not connect to tracker at {}:{}!\n {}",
             mTrackerHost, mTrackerPort, e.what());
         return false;
     }
     mTrackerConn.clear_timeout();
 
-    lg::info("Registered as worker for tracker at {}:{}, own ID is {}\n",
+    lg::info("Registered as worker for tracker at {}:{}, own ID is {}",
         mTrackerHost, mTrackerPort, mOwnId);
 
     return true;
@@ -79,13 +86,18 @@ auto Client::teardown() -> void {
 }
 
 auto Client::unregisterAsClient() -> void {
-    lg::info("Unregistered as worker for tracker at {}:{}\n",
+    lg::info("Unregistered as worker for tracker at {}:{}",
         mTrackerHost, mTrackerPort);
     mTrackerConn.call(RPC_UNREGISTER_CLIENT, mOwnId);
 }
 
 auto Client::registerTask(const Task &task) -> void {
     mTrackerConn.call(RPC_SUBMIT_TASK, task);
+}
+
+auto Client::receiveSubtask(const Subtask& subtask) -> bool  {
+    lg::debug("Accepted subtask: {}", subtask.functionName);
+    return true;
 }
 
 auto Client::startHeartbeatThread() -> std::thread {

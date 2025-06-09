@@ -10,7 +10,7 @@
 
 
 struct Subtask {
-    enum Status { AVAILABLE, ENQUEUED, COMPLETED};
+    enum Status { AVAILABLE, ENQUEUED, SUBMITTED, COMPLETED};
 
 
     Id id = -1;
@@ -31,7 +31,7 @@ public:
     Task(const Task& other);
 
     auto printStructure() const -> void;
-    auto getAvailableSubtasks() const -> std::vector<Subtask>;
+    auto getAvailableSubtasks(bool markAsEnqueued) -> std::vector<Subtask>;
     auto isCompleted() const -> bool;
 
     MSGPACK_DEFINE(mName, mRoot, mSubtasks)

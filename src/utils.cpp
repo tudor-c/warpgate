@@ -8,7 +8,7 @@ namespace util {
         const auto size = file_size(std::filesystem::path(path));
         std::string buffer(size, '\0');
         std::ifstream file(path);
-        file.read(&buffer[0], size);
+        file.read(&buffer[0], static_cast<long>(size));
         return buffer;
     }
 
@@ -17,4 +17,11 @@ namespace util {
         return currentId++;
     }
 
+    auto scheduleTask(const int intervalMs,
+        const std::function<void()>& fn, const std::function<bool()>& shouldEnd) -> void {
+        while (!shouldEnd()) {
+            fn();
+            std::this_thread::sleep_for(std::chrono::milliseconds(intervalMs));
+        }
+    }
 }

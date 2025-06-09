@@ -11,7 +11,18 @@ Tracker::Tracker() : mRpcServer(TRACKER_PORT) {
         LOCALHOST, mRpcServer.port());
 
     mHeartbeatCheckThread = std::thread([this] {
-        this->refreshClientListLoop();
+        util::scheduleTask(
+            TRACKER_HEARTBEAT_CHECK_INTERVAL_MS,
+            [this] { this->refreshClientList(); },
+            [this] { return false; } // TODO implement end condition
+        );
+    });
+    mSubtaskDispatchThread = std::thread([this] {
+        util::scheduleTask(
+            TRACKER_DISPATCH_SUBTASKS_INTERVAL_MS,
+            [this] { this->dispatchSubtasksFromQueue(); },
+            [this] { return false; } // TODO implement end condition
+        );
     });
 
     this->bindRpcServerFunctions();
@@ -28,9 +39,11 @@ auto Tracker::registerWorker(const std::string &host, int port) -> Id {
     const auto socketAddr = socketAddress(host, port);
 
     mClients[id] = Client {
+        .id = id,
         .socketAddr = socketAddr,
-        .worker = std::make_unique<rpc::client>(host, port),
+        .client = std::make_unique<rpc::client>(host, port),
         .lastHeartbeat = std::chrono::system_clock::now(),
+        .isWorker = true, // TODO add condition
         .isFree = true};
 
     printWorkers();
@@ -49,16 +62,42 @@ auto Tracker::printWorkers() const -> void {
     lg::debug(workersInfo);
 }
 
-auto Tracker::registerTask(const Task& task) -> void {
-    const auto id = util::generateUniqueId();
-    mTasks.insert({id, task});
-    dispatchAvailableSubtasksByTask(id);
+auto Tracker::registerTask(Task task) -> void {
+    const auto taskId = util::generateUniqueId();
+    mTasks.insert({taskId, task});
+
+    for (const auto& subtask : mTasks.at(taskId).getAvailableSubtasks(true)) {
+        mSubtaskQueue.push(subtask);
+    }
 }
 
-auto Tracker::dispatchAvailableSubtasksByTask(const Id taskId) -> void {
-    auto subtasks = mTasks.at(taskId).getAvailableSubtasks();
-    for (auto& subtask : subtasks) {
-        // TODO --
+auto Tracker::dispatchSubtasksFromQueue() -> void {
+    auto availableWorkers = mClients
+        | std::views::values
+        | std::views::filter([](const auto& client) {
+            return client.isWorker && client.isFree;
+        });
+    auto nextWorker = std::ranges::begin(availableWorkers);
+
+    while (!mSubtaskQueue.empty()) {
+        const auto& subtask = mSubtaskQueue.front();
+        if (nextWorker == std::ranges::end(availableWorkers)) {
+            break; // no other free workers
+        }
+        bool accepted = false;
+        while (!accepted) {
+            auto& worker = *nextWorker;
+            accepted = worker.client->call(RPC_DISPATCH_SUBTASK, subtask).as<bool>();
+            if (accepted) {
+                lg::debug("Subtask {} accepted by worker {}", subtask.functionName, worker.id);
+                mSubtaskQueue.pop();
+                ++nextWorker;
+                break;
+            }
+
+            lg::debug("Subtask {} NOT accepted by worker {}", subtask.functionName, worker.id);
+            ++nextWorker;
+        }
     }
 }
 
@@ -75,32 +114,30 @@ auto Tracker::bindRpcServerFunctions() -> void {
     });
     mRpcServer.bind(RPC_TEST_ANNOUNCEMENT, [this](const std::string& mess) {
         for (const auto& client : mClients | std::views::values) {
-            client.worker->call(RPC_TEST_ANNOUNCEMENT_BROADCAST, mess);
+            client.client->call(RPC_TEST_ANNOUNCEMENT_BROADCAST, mess);
         }
     });
     mRpcServer.bind(RPC_SUBMIT_TASK, [this](const Task& task) {
         task.printStructure();
+        this->registerTask(task);
     });
     mRpcServer.bind(RPC_HEARTBEAT, [this](const Id clientId) {
         this->refreshClientHeartbeat(clientId);
     });
 }
 
-auto Tracker::refreshClientListLoop() -> void { // TODO add end condition and thread joining
-    while (true) {
-        const auto now = std::chrono::system_clock::now();
-        for (auto it = mClients.begin(); it != mClients.cend(); ) {
-            auto& clientId = it->first;
-            auto& lastHeartbeat = it->second.lastHeartbeat;
-            if (std::chrono::duration_cast<std::chrono::milliseconds>(
-                    now - lastHeartbeat).count() > CLIENT_HEARTBEAT_MAX_INTERVAL_MS) {
-                lg::info("Removed client {} after no heartbeat", clientId);
-                mClients.erase(it++);
-            } else {
-                ++it;
-            }
+auto Tracker::refreshClientList() -> void {
+    const auto now = std::chrono::system_clock::now();
+    for (auto it = mClients.begin(); it != mClients.cend(); ) {
+        auto& clientId = it->first;
+        auto& lastHeartbeat = it->second.lastHeartbeat;
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(
+                now - lastHeartbeat).count() > CLIENT_HEARTBEAT_MAX_INTERVAL_MS) {
+            lg::info("Removed client {} after no heartbeat", clientId);
+            mClients.erase(it++);
+        } else {
+            ++it;
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(TRACKER_HEARTBEAT_CHECK_INTERVAL_MS));
     }
 }
 

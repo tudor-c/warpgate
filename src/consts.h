@@ -10,6 +10,7 @@ constexpr auto RPC_HEARTBEAT = "heartbeat";
 // RPC Client function names
 constexpr auto RPC_TEST_ANNOUNCEMENT = "testAnnounce";
 constexpr auto RPC_TEST_ANNOUNCEMENT_BROADCAST = "testAnnounceBroadcast";
+constexpr auto RPC_DISPATCH_SUBTASK = "dispatchSubtask";
 
 // Connection parameters
 constexpr auto LOCALHOST = "127.0.0.1";
@@ -34,3 +35,4 @@ constexpr auto JSON_TASK_DEPENDS_ON = "depends_on";
 constexpr int CLIENT_HEARTBEAT_PERIOD_MS = 500;
 constexpr int CLIENT_HEARTBEAT_MAX_INTERVAL_MS = 1000;
 constexpr int TRACKER_HEARTBEAT_CHECK_INTERVAL_MS = 50;
+constexpr int TRACKER_DISPATCH_SUBTASKS_INTERVAL_MS = 200;

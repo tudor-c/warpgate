@@ -22,12 +22,15 @@ public:
     auto run() -> int;
 
 private:
+    auto bindRcpServerFunctions() -> void;
+
     auto registerAsClient() -> bool;
     auto startHeartbeatThread() -> std::thread;
     auto getOwnPort() const -> int;
 
     auto unregisterAsClient() -> void;
     auto registerTask(const Task &) -> void;
+    auto receiveSubtask(const Subtask&) -> bool;
 
     auto teardown() -> void;
 

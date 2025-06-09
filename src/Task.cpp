@@ -65,15 +65,22 @@ auto Task::printStructure() const -> void {
     lg::debug("Task: {}, root: {}, subtasks:\n{}", mName, mRoot, subtaskInfo);
 }
 
-auto Task::getAvailableSubtasks() const -> std::vector<Subtask> {
-    return mSubtasks
-        | std::views::values
-        | std::views::filter([this](const Subtask& task) {
-            return task.status == Subtask::AVAILABLE && std::ranges::all_of(task.dependsOn, [this](const Id dependencyId) {
+auto Task::getAvailableSubtasks(bool markAsEnqueued) -> std::vector<Subtask> {
+    std::vector<Subtask> result;
+
+    for (auto &subtask: mSubtasks | std::views::values) {
+        const bool allDependenciesCompleted = std::ranges::all_of(subtask.dependsOn,
+            [this](const Id dependencyId) {
                 return mSubtasks.at(dependencyId).status == Subtask::COMPLETED;
             });
-        })
-        | std::ranges::to<std::vector<Subtask>>();
+        if (subtask.status == Subtask::AVAILABLE && allDependenciesCompleted) {
+            result.push_back(subtask);
+            if (markAsEnqueued) {
+                subtask.status = Subtask::ENQUEUED;
+            }
+        }
+    }
+    return result;
 }
 
 auto Task::isCompleted() const -> bool {

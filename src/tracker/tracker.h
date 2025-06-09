@@ -1,5 +1,6 @@
 #pragma once
 
+#include <queue>
 #include <rpc/client.h>
 #include <rpc/server.h>
 
@@ -14,17 +15,21 @@ public:
     auto run() -> int;
 
     struct Client {
+        int id;
         std::string socketAddr;
-        std::unique_ptr<rpc::client> worker;
+        std::unique_ptr<rpc::client> client;
         std::chrono::time_point<std::chrono::system_clock> lastHeartbeat;
+        bool isWorker;
         bool isFree;
     };
 
 private:
     std::unordered_map<Id, Client> mClients; // TODO lock behind RW guard
     rpc::server mRpcServer;
-    std::thread mHeartbeatCheckThread;
     std::unordered_map<Id, Task> mTasks;
+    std::queue<Subtask> mSubtaskQueue;
+    std::thread mHeartbeatCheckThread;
+    std::thread mSubtaskDispatchThread;
 
     static auto socketAddress(const std::string &host, int port) -> std::string;
 
@@ -34,9 +39,9 @@ private:
     auto unregisterWorker(Id id) -> void;
     auto printWorkers() const -> void;
 
-    auto registerTask(const Task&) -> void;
-    auto dispatchAvailableSubtasksByTask(Id taskId) -> void;
+    auto registerTask(Task) -> void;
+    auto dispatchSubtasksFromQueue() -> void;
 
-    auto refreshClientListLoop() -> void;
+    auto refreshClientList() -> void;
     auto refreshClientHeartbeat(Id clientId) -> void;
 };
