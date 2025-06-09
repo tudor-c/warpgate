@@ -66,7 +66,7 @@ auto Tracker::registerTask(Task task) -> void {
     const auto taskId = util::generateUniqueId();
     mTasks.insert({taskId, task});
 
-    for (const auto& subtask : mTasks.at(taskId).getAvailableSubtasks(true)) {
+    for (auto& subtask : mTasks.at(taskId).getAvailableSubtasks(true)) {
         mSubtaskQueue.push(subtask);
     }
 }
@@ -80,7 +80,7 @@ auto Tracker::dispatchSubtasksFromQueue() -> void {
     auto nextWorker = std::ranges::begin(availableWorkers);
 
     while (!mSubtaskQueue.empty()) {
-        const auto& subtask = mSubtaskQueue.front();
+        auto& subtask = mSubtaskQueue.front().get();
         if (nextWorker == std::ranges::end(availableWorkers)) {
             break; // no other free workers
         }
@@ -90,6 +90,8 @@ auto Tracker::dispatchSubtasksFromQueue() -> void {
             accepted = worker.client->call(RPC_DISPATCH_SUBTASK, subtask).as<bool>();
             if (accepted) {
                 lg::debug("Subtask {} accepted by worker {}", subtask.functionName, worker.id);
+                subtask.status = Subtask::SUBMITTED;
+                worker.isFree = false;
                 mSubtaskQueue.pop();
                 ++nextWorker;
                 break;

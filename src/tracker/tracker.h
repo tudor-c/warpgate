@@ -27,7 +27,7 @@ private:
     std::unordered_map<Id, Client> mClients; // TODO lock behind RW guard
     rpc::server mRpcServer;
     std::unordered_map<Id, Task> mTasks;
-    std::queue<Subtask> mSubtaskQueue;
+    std::queue<std::reference_wrapper<Subtask>> mSubtaskQueue;
     std::thread mHeartbeatCheckThread;
     std::thread mSubtaskDispatchThread;
 

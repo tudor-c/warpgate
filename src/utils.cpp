@@ -13,7 +13,7 @@ namespace util {
     }
 
     auto generateUniqueId() -> Id {
-        static std::atomic_int currentId;
+        static std::atomic_int currentId = 1;
         return currentId++;
     }
 
