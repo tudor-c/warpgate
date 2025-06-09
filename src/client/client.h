@@ -1,5 +1,6 @@
 #pragma once
 
+#include <queue>
 #include <string>
 
 #include <rpc/client.h>
@@ -26,11 +27,12 @@ private:
 
     auto registerAsClient() -> bool;
     auto unregisterAsClient() -> void;
-    auto startHeartbeatThread() -> std::thread;
     auto getOwnPort() const -> int;
 
-    auto registerTask(const Task &) -> void;
-    auto receiveSubtask(const Subtask& subtask) -> bool;
+    auto isBusy() const -> bool;
+    auto submitTaskToTracker(const Task &) -> void;
+    auto receiveJob(const Subtask& subtask) -> bool;
+    auto executeJobsFromQueue() -> void;
 
     auto teardown() -> void;
 
@@ -44,4 +46,11 @@ private:
 
     std::thread mServerThread;
     std::thread mHeartbeatThread;
+    std::thread mJobThread;
+
+    std::queue<Subtask> mJobQueue;
+    // pairs of finished subtask id and its result
+    // TODO change result type from string to actual data
+    std::queue<std::pair<Id, std::string>> mJobResults;
+    std::vector<std::future<std::string>> mExecutorPool;
 };

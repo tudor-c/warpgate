@@ -4,14 +4,14 @@
 constexpr auto RPC_REGISTER_CLIENT = "registerClient";
 constexpr auto RPC_UNREGISTER_CLIENT = "unregisterClient";
 constexpr auto RPC_SEND_FILE_TEST = "sendFile";
-constexpr auto RPC_SUBMIT_TASK = "submitTask";
+constexpr auto RPC_SUBMIT_TASK_TO_TRACKER = "submitTaskToTracker";
 constexpr auto RPC_HEARTBEAT = "heartbeat";
 constexpr auto RPC_ANNOUNCE_SUBTASK_COMPLETED = "markSubtaskCompleted";
 
 // RPC Client function names
 constexpr auto RPC_TEST_ANNOUNCEMENT = "testAnnounce";
 constexpr auto RPC_TEST_ANNOUNCEMENT_BROADCAST = "testAnnounceBroadcast";
-constexpr auto RPC_DISPATCH_SUBTASK = "dispatchSubtask";
+constexpr auto RPC_DISPATCH_JOB = "dispatchJob";
 
 // Connection parameters
 constexpr auto LOCALHOST = "127.0.0.1";
@@ -35,5 +35,9 @@ constexpr auto JSON_TASK_DEPENDS_ON = "depends_on";
 
 constexpr int CLIENT_HEARTBEAT_PERIOD_MS = 500;
 constexpr int CLIENT_HEARTBEAT_MAX_INTERVAL_MS = 1000;
+constexpr int CLIENT_JOB_LAUNCH_INTERVAL_MS = 100;
 constexpr int TRACKER_HEARTBEAT_CHECK_INTERVAL_MS = 50;
 constexpr int TRACKER_DISPATCH_SUBTASKS_INTERVAL_MS = 200;
+
+// Max numbers of jobs a worker can take at the same time
+constexpr int WORKER_JOB_LIMIT = 1;

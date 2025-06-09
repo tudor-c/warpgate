@@ -45,7 +45,7 @@ private:
     auto printWorkers() const -> void;
 
     auto registerTask(const Task&) -> void;
-    auto dispatchSubtasksFromQueue() -> void;
+    auto dispatchJobsFromQueue() -> void;
     auto markSubtaskCompleted(Id workerId, Id subtaskId) -> void;
 
     auto refreshClientList() -> void;

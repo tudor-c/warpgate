@@ -20,7 +20,7 @@ Tracker::Tracker() : mRpcServer(TRACKER_PORT) {
     mSubtaskDispatchThread = std::thread([this] {
         util::scheduleTask(
             TRACKER_DISPATCH_SUBTASKS_INTERVAL_MS,
-            [this] { this->dispatchSubtasksFromQueue(); },
+            [this] { this->dispatchJobsFromQueue(); },
             [this] { return false; } // TODO implement end condition
         );
     });
@@ -79,7 +79,7 @@ auto Tracker::registerTask(const Task& task) -> void {
     }
 }
 
-auto Tracker::dispatchSubtasksFromQueue() -> void {
+auto Tracker::dispatchJobsFromQueue() -> void {
     auto availableWorkers = mClients
         | std::views::values
         | std::views::filter([](const auto& client) {
@@ -95,8 +95,11 @@ auto Tracker::dispatchSubtasksFromQueue() -> void {
         }
         bool accepted = false;
         while (!accepted) {
+            if (nextWorker == std::ranges::end(availableWorkers)) {
+                break;
+            }
             auto& worker = *nextWorker;
-            accepted = worker.client->call(RPC_DISPATCH_SUBTASK, subtask).as<bool>();
+            accepted = worker.client->call(RPC_DISPATCH_JOB, subtask).as<bool>();
             if (accepted) {
                 lg::debug("Subtask {} accepted by worker {}", subtask.functionName, worker.id);
                 subtask.status = Subtask::SUBMITTED;
@@ -134,7 +137,7 @@ auto Tracker::bindRpcServerFunctions() -> void {
             client.client->call(RPC_TEST_ANNOUNCEMENT_BROADCAST, mess);
         }
     });
-    mRpcServer.bind(RPC_SUBMIT_TASK, [this](const Task& task) {
+    mRpcServer.bind(RPC_SUBMIT_TASK_TO_TRACKER, [this](const Task& task) {
         task.printStructure();
         this->registerTask(task);
     });

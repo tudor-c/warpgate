@@ -13,7 +13,8 @@ Client::Client(
         mTrackerHost(trackerHost),
         mTrackerPort(trackerPort),
         mTrackerConn(trackerHost, trackerPort),
-        mOwnServer(FREE_PORT) {
+        mOwnServer(FREE_PORT),
+        mExecutorPool(std::vector<std::future<std::string>>()){
 
     lg::info("Starting worker at {}:{} 🌐",
         LOCALHOST, mOwnServer.port());
@@ -30,23 +31,34 @@ Client::Client(
         }
 
         if (task) {
-            registerTask(*task);
+            submitTaskToTracker(*task);
         }
     }
 }
 
-Client::~Client() {
-    unregisterAsClient();
-}
+Client::~Client() {}
 
 auto Client::run() -> int {
     if (!registerAsClient()) {
-        lg::error("Could not connect!");
         return 1;
     }
 
     mServerThread = std::thread(&rpc::server::run, &mOwnServer);
-    mHeartbeatThread = startHeartbeatThread();
+    mHeartbeatThread = std::thread([this] {
+        util::scheduleTask(
+            CLIENT_HEARTBEAT_PERIOD_MS,
+            [this] { mTrackerConn.call(RPC_HEARTBEAT, mOwnId); },
+            [this] { return false; }
+        );
+    });
+    mJobThread = std::thread([this] {
+        util::scheduleTask(
+            CLIENT_JOB_LAUNCH_INTERVAL_MS,
+            [this] { this->executeJobsFromQueue(); },
+            [this] { return false; }
+        );
+    });
+
     mTrackerConn.call(RPC_TEST_ANNOUNCEMENT,
         std::format("Hello world! I'm {}:{}", LOCALHOST, mOwnServer.port()));
 
@@ -58,8 +70,8 @@ auto Client::bindRcpServerFunctions() -> void {
     mOwnServer.bind(RPC_TEST_ANNOUNCEMENT_BROADCAST, [](const std::string& mess) {
         lg::debug("Announcement from another peer: {}", mess);
     });
-    mOwnServer.bind(RPC_DISPATCH_SUBTASK, [this](const Subtask& subtask) {
-        return this->receiveSubtask(subtask);
+    mOwnServer.bind(RPC_DISPATCH_JOB, [this](const Subtask& subtask) {
+        return this->receiveJob(subtask);
     });
 }
 
@@ -91,32 +103,50 @@ auto Client::unregisterAsClient() -> void {
     mTrackerConn.call(RPC_UNREGISTER_CLIENT, mOwnId);
 }
 
-auto Client::registerTask(const Task &task) -> void {
-    mTrackerConn.call(RPC_SUBMIT_TASK, task);
+auto Client::submitTaskToTracker(const Task &task) -> void {
+    mTrackerConn.call(RPC_SUBMIT_TASK_TO_TRACKER, task);
 }
 
-auto Client::receiveSubtask(const Subtask& subtask) -> bool  {
-    lg::debug("Accepted subtask, id={}, fn={}", subtask.id, subtask.functionName);
-
-    // perform work ...
-    auto th = std::thread([this, subtask] {
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        mTrackerConn.call(RPC_ANNOUNCE_SUBTASK_COMPLETED, mOwnId, subtask.id);
-    });
-    th.detach();
-
+auto Client::receiveJob(const Subtask& subtask) -> bool  {
+    if (isBusy()) {
+        lg::debug("Denied subtask: id={}, fn={}", subtask.id, subtask.functionName);
+        return false;
+    }
+    lg::debug("Accepted subtask: id={}, fn={}", subtask.id, subtask.functionName);
+    mJobQueue.push(subtask);
     return true;
 }
 
-auto Client::startHeartbeatThread() -> std::thread {
-    return std::thread([this] {
-        while (true) {
-            mTrackerConn.call(RPC_HEARTBEAT, mOwnId);
-            std::this_thread::sleep_for(std::chrono::milliseconds(CLIENT_HEARTBEAT_PERIOD_MS));
-        }
-    });
+auto Client::executeJobsFromQueue() -> void {
+    if (mJobQueue.empty()) {
+        return;
+    }
+
+    const auto subtask = std::move(mJobQueue.front());
+    mJobQueue.pop();
+    lg::info("Executing subtask {}", subtask.functionName);
+
+    mTrackerConn.call(RPC_ANNOUNCE_SUBTASK_COMPLETED, mOwnId, subtask.id);
+
+    // for (auto it = mExecutorPool.begin(); it != mExecutorPool.end();) {
+    //     auto status = it->wait_for(std::chrono::milliseconds(0));
+    //     if (status == std::future_status::ready) {
+    //         lg::debug("Done: {}", it->get());
+    //         mExecutorPool.erase(it++);
+    //     } else {
+    //         ++it;
+    //     }
+    //
+    // }
+    // while (!mJobQueue.empty() && mExecutorPool.size() < WORKER_JOB_LIMIT) {
+    //
+    // }
 }
 
 auto Client::getOwnPort() const -> int {
     return mOwnServer.port();
+}
+
+auto Client::isBusy() const -> bool {
+    return mJobQueue.size() >= WORKER_JOB_LIMIT;
 }
