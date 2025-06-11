@@ -25,7 +25,6 @@ Task::Task(const std::string& path) {
                 return true;
             }
         }
-        
         return false;
     };
 
@@ -68,10 +67,7 @@ auto Task::getAvailableSubtasks() -> std::vector<std::reference_wrapper<Subtask>
     return mSubtasks
         | std::views::values
         | std::views::filter([this](const Subtask &subtask) {
-            return subtask.status == Subtask::AVAILABLE &&
-                std::ranges::all_of(subtask.dependsOn, [this](const Id dependencyId) {
-                  return mSubtasks.at(dependencyId).status == Subtask::COMPLETED;
-                });
+            return this->isSubtaskAvailable(subtask);
         })
         | std::ranges::to<std::vector<std::reference_wrapper<Subtask>>>();
 }
@@ -84,4 +80,11 @@ auto Task::getAllSubtasks() -> std::vector<std::reference_wrapper<Subtask>> {
 
 auto Task::isCompleted() const -> bool {
     return mSubtasks.at(mRootIndex).status;
+}
+
+auto Task::isSubtaskAvailable(const Subtask& subtask) const -> bool {
+    return subtask.status == Subtask::AVAILABLE &&
+        std::ranges::all_of(subtask.dependsOn, [this](const Id dependencyId) {
+          return mSubtasks.at(dependencyId).status == Subtask::COMPLETED;
+        });
 }

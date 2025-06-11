@@ -9,26 +9,24 @@
 Tracker::Tracker() : mRpcServer(TRACKER_PORT) {
     lg::info("Starting tracker at {}:{} 🚀",
         LOCALHOST, mRpcServer.port());
-
-    mHeartbeatCheckThread = std::thread([this] {
-        util::scheduleTask(
-            TRACKER_HEARTBEAT_CHECK_INTERVAL_MS,
-            [this] { this->refreshClientList(); },
-            [this] { return false; } // TODO implement end condition
-        );
-    });
-    mSubtaskDispatchThread = std::thread([this] {
-        util::scheduleTask(
-            TRACKER_DISPATCH_SUBTASKS_INTERVAL_MS,
-            [this] { this->dispatchJobsFromQueue(); },
-            [this] { return false; } // TODO implement end condition
-        );
-    });
-
     this->bindRpcServerFunctions();
 }
 
 auto Tracker::run() -> int {
+    mHeartbeatCheckThread = std::thread([this] {
+      util::scheduleTask(
+          TRACKER_HEARTBEAT_CHECK_INTERVAL_MS,
+          [this] { this->refreshClientList(); },
+          [this] { return false; } // TODO implement end condition
+      );
+    });
+    mSubtaskDispatchThread = std::thread([this] {
+        util::scheduleTask(
+            TRACKER_DISPATCH_SUBTASKS_INTERVAL_MS,
+            [this] { this->updateJobQueue(); },
+            [this] { return false; } // TODO implement end condition
+        );
+    });
     mRpcServer.run();
     return 0;
 }
@@ -72,10 +70,19 @@ auto Tracker::registerTask(const Task& task) -> void {
         subtask.get().id = id;
         mAllSubtasks.insert({id, std::ref(subtask)});
     }
+}
 
-    // enqueue newly available subtasks
-    for (auto& subtask : mTasks.at(taskId).getAvailableSubtasks()) {
-        mSubtaskQueue.push(subtask);
+auto Tracker::updateJobQueue() -> void {
+    this->enqueueAvailableJobs();
+    this->dispatchJobsFromQueue();
+}
+
+auto Tracker::enqueueAvailableJobs() -> void {
+    for (auto& task : mTasks | std::views::values) {
+        for (auto& subtask : task.getAvailableSubtasks()) {
+            mSubtaskQueue.push(subtask);
+            subtask.get().status = Subtask::ENQUEUED;
+        }
     }
 }
 
