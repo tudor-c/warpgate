@@ -10,16 +10,6 @@
 
 using json = nlohmann::json;
 
-// Subtask::Subtask(const Subtask &other) :
-//     index(other.index),
-//     id(other.id),
-//     completedBy(other.completedBy),
-//     functionName(other.functionName),
-//     dependsOn(other.dependsOn),
-//     status(other.status) {}
-
-Task::Task() {}
-
 Task::Task(const std::string& path) {
     json config;
     if (std::ifstream file(path); file.is_open()) {
@@ -59,9 +49,6 @@ Task::Task(const std::string& path) {
             .status = Subtask::AVAILABLE});
     }
 }
-
-Task::Task(const Task &other) :
-    mName(other.mName), mRootIndex(other.mRootIndex), mSubtasks(other.mSubtasks) {}
 
 auto Task::printStructure() const -> void {
     std::string subtaskInfo;

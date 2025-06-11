@@ -13,8 +13,9 @@ Client::Client(
         mTrackerHost(trackerHost),
         mTrackerPort(trackerPort),
         mTrackerConn(trackerHost, trackerPort),
-        mOwnServer(FREE_PORT),
-        mExecutorPool(std::vector<std::future<std::string>>()){
+        mOwnServer(FREE_PORT)
+        // mExecutorPool(std::vector<std::future<std::string>>())
+        {
 
     lg::info("Starting worker at {}:{} 🌐",
         LOCALHOST, mOwnServer.port());
@@ -36,8 +37,6 @@ Client::Client(
     }
 }
 
-Client::~Client() {}
-
 auto Client::run() -> int {
     if (!registerAsClient()) {
         return 1;
@@ -54,7 +53,7 @@ auto Client::run() -> int {
     mJobThread = std::thread([this] {
         util::scheduleTask(
             CLIENT_JOB_LAUNCH_INTERVAL_MS,
-            [this] { this->executeJobsFromQueue(); },
+            [this] { this->processJobsQueues(); },
             [this] { return false; }
         );
     });
@@ -80,13 +79,13 @@ auto Client::registerAsClient() -> bool {
     try {
         mOwnId = mTrackerConn.call(RPC_REGISTER_CLIENT, LOCALHOST, getOwnPort()).as<Id>();
     } catch (std::exception& e) {
-        lg::error("Could not connect to tracker at {}:{}!\n {}",
+        lg::error("Could not connect to tracker at {}:{}!\n {}!",
             mTrackerHost, mTrackerPort, e.what());
         return false;
     }
     mTrackerConn.clear_timeout();
 
-    lg::info("Registered as worker for tracker at {}:{}, own ID is {}",
+    lg::info("Registered as worker for tracker at {}:{}, own ID is {}.",
         mTrackerHost, mTrackerPort, mOwnId);
 
     return true;
@@ -98,7 +97,7 @@ auto Client::teardown() -> void {
 }
 
 auto Client::unregisterAsClient() -> void {
-    lg::info("Unregistered as worker for tracker at {}:{}",
+    lg::info("Unregistered as worker for tracker at {}:{}.",
         mTrackerHost, mTrackerPort);
     mTrackerConn.call(RPC_UNREGISTER_CLIENT, mOwnId);
 }
@@ -109,38 +108,45 @@ auto Client::submitTaskToTracker(const Task &task) -> void {
 
 auto Client::receiveJob(const Subtask& subtask) -> bool  {
     if (isBusy()) {
-        lg::debug("Denied subtask: id={}, fn={}", subtask.id, subtask.functionName);
+        lg::debug("Denied subtask: id={}, fn={}!", subtask.id, subtask.functionName);
         return false;
     }
-    lg::debug("Accepted subtask: id={}, fn={}", subtask.id, subtask.functionName);
+    lg::debug("Accepted subtask: id={}, fn={}.", subtask.id, subtask.functionName);
     mJobQueue.push(subtask);
     return true;
 }
 
-auto Client::executeJobsFromQueue() -> void {
-    if (mJobQueue.empty()) {
-        return;
+auto Client::processJobsQueues() -> void {
+    this->launchJobsFromQueue();
+    this->sendFinishedJobsResults();
+}
+
+auto Client::launchJobsFromQueue() -> void {
+    while (!mJobQueue.empty()) {
+        const auto subtask = std::move(mJobQueue.front());
+        mJobQueue.pop();
+
+        lg::debug("Executing subtask {}...", subtask.functionName);
+        mWorkerThreads.insert({subtask.id, std::thread([this, subtask]() {
+            lg::debug("Actively working on subtask {}...", subtask.functionName);
+
+            // job done 🧌
+            mResults.insert({subtask.id, subtask.functionName});
+        })});
     }
+}
 
-    const auto subtask = std::move(mJobQueue.front());
-    mJobQueue.pop();
-    lg::info("Executing subtask {}", subtask.functionName);
+auto Client::sendFinishedJobsResults() -> void {
+    for (auto it = mResults.begin(); it != mResults.end();) {
+        const auto result = std::move(it->second);
+        const auto jobId = it->first;
+        mResults.erase(it++);
 
-    mTrackerConn.call(RPC_ANNOUNCE_SUBTASK_COMPLETED, mOwnId, subtask.id);
-
-    // for (auto it = mExecutorPool.begin(); it != mExecutorPool.end();) {
-    //     auto status = it->wait_for(std::chrono::milliseconds(0));
-    //     if (status == std::future_status::ready) {
-    //         lg::debug("Done: {}", it->get());
-    //         mExecutorPool.erase(it++);
-    //     } else {
-    //         ++it;
-    //     }
-    //
-    // }
-    // while (!mJobQueue.empty() && mExecutorPool.size() < WORKER_JOB_LIMIT) {
-    //
-    // }
+        mWorkerThreads.at(jobId).join();
+        mWorkerThreads.erase(jobId);
+        lg::debug("Announcing finished job: {}...", jobId);
+        mTrackerConn.call(RPC_ANNOUNCE_SUBTASK_COMPLETED, mOwnId, jobId);
+    }
 }
 
 auto Client::getOwnPort() const -> int {
@@ -148,5 +154,5 @@ auto Client::getOwnPort() const -> int {
 }
 
 auto Client::isBusy() const -> bool {
-    return mJobQueue.size() >= WORKER_JOB_LIMIT;
+    return mJobQueue.size() + mWorkerThreads.size() >= ACTIVE_JOB_LIMIT;
 }

@@ -13,7 +13,7 @@ struct Subtask {
     enum Status { AVAILABLE, ENQUEUED, SUBMITTED, COMPLETED};
 
     // index, as specified in json config file, not unique between tasks
-    int index;
+    int index = -1;
     // unique id assigned by the tracker, not present in json representation
     Id id = -1;
     // id of the worker that completed this subtask
@@ -25,8 +25,6 @@ struct Subtask {
     // status of the subtask, maintained by the tracker
     Status status = AVAILABLE;
 
-    // Subtask(const Subtask& other);
-
     MSGPACK_DEFINE(index, id, completedBy, functionName, dependsOn, status)
 };
 
@@ -35,9 +33,9 @@ MSGPACK_ADD_ENUM(Subtask::Status);
 
 class Task {
 public:
-    Task();
-    Task(const std::string& path);
-    Task(const Task& other);
+    Task() = default;
+    Task(const Task& other) = default;
+    explicit Task(const std::string& path);
 
     auto printStructure() const -> void;
     auto getAvailableSubtasks() -> std::vector<std::reference_wrapper<Subtask>>;

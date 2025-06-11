@@ -18,7 +18,7 @@ public:
         bool registerAsWorker,
         const std::string &taskConfigPath);
 
-    ~Client();
+    ~Client() = default;
 
     auto run() -> int;
 
@@ -32,7 +32,9 @@ private:
     auto isBusy() const -> bool;
     auto submitTaskToTracker(const Task &) -> void;
     auto receiveJob(const Subtask& subtask) -> bool;
-    auto executeJobsFromQueue() -> void;
+    auto processJobsQueues() -> void;
+    auto launchJobsFromQueue() -> void;
+    auto sendFinishedJobsResults() -> void;
 
     auto teardown() -> void;
 
@@ -52,5 +54,8 @@ private:
     // pairs of finished subtask id and its result
     // TODO change result type from string to actual data
     std::queue<std::pair<Id, std::string>> mJobResults;
-    std::vector<std::future<std::string>> mExecutorPool;
+    // results of completed subtasks, indexed by subtask id
+    std::unordered_map<Id, std::string> mResults;
+    // currently running threads, indexed by subtask id
+    std::unordered_map<Id, std::thread> mWorkerThreads;
 };

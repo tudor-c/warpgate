@@ -40,4 +40,4 @@ constexpr int TRACKER_HEARTBEAT_CHECK_INTERVAL_MS = 50;
 constexpr int TRACKER_DISPATCH_SUBTASKS_INTERVAL_MS = 200;
 
 // Max numbers of jobs a worker can take at the same time
-constexpr int WORKER_JOB_LIMIT = 1;
+constexpr int ACTIVE_JOB_LIMIT = 1;

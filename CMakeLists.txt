@@ -55,6 +55,7 @@ target_link_libraries(warpgate PRIVATE spdlog::spdlog)
 target_precompile_headers(warpgate PRIVATE
         <spdlog/spdlog.h>
         <spdlog/sinks/stdout_color_sinks.h>
+        <argparse/argparse.hpp>
 )
 
 get_target_property(RPC_INCLUDE_DIRS rpc INTERFACE_INCLUDE_DIRECTORIES)
