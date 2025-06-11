@@ -78,9 +78,9 @@ auto Client::registerAsClient() -> bool {
     mTrackerConn.set_timeout(TIMEOUT_MS);
     try {
         mOwnId = mTrackerConn.call(RPC_REGISTER_CLIENT, LOCALHOST, getOwnPort()).as<Id>();
-    } catch (std::exception& e) {
-        lg::error("Could not connect to tracker at {}:{}!\n {}!",
-            mTrackerHost, mTrackerPort, e.what());
+    } catch (std::exception&) {
+        lg::error("Tracker unavailable at {}:{}!",
+            mTrackerHost, mTrackerPort);
         return false;
     }
     mTrackerConn.clear_timeout();
@@ -118,7 +118,7 @@ auto Client::receiveJob(const Subtask& subtask) -> bool  {
 
 auto Client::processJobsQueues() -> void {
     this->launchJobsFromQueue();
-    this->sendFinishedJobsResults();
+    this->sendFinishedJobsNotifications();
 }
 
 auto Client::launchJobsFromQueue() -> void {
@@ -131,12 +131,12 @@ auto Client::launchJobsFromQueue() -> void {
             lg::debug("Actively working on subtask {}...", subtask.functionName);
 
             // job done 🧌
-            mResults.insert({subtask.id, subtask.functionName});
+            mResults.insert({subtask.id, std::format("result-of:{}", subtask.functionName)});
         })});
     }
 }
 
-auto Client::sendFinishedJobsResults() -> void {
+auto Client::sendFinishedJobsNotifications() -> void {
     for (auto it = mResults.begin(); it != mResults.end();) {
         const auto result = std::move(it->second);
         const auto jobId = it->first;

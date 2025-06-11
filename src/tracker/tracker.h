@@ -6,6 +6,7 @@
 
 #include "Task.h"
 #include "utils.h"
+#include "types.h"
 
 class Tracker {
 
@@ -16,8 +17,8 @@ public:
 
     struct Client {
         int id;
-        std::string socketAddr;
-        std::unique_ptr<rpc::client> client;
+        SocketAddress socketAddres;
+        std::unique_ptr<rpc::client> rpcClient;
         std::chrono::time_point<std::chrono::system_clock> lastHeartbeat;
         bool isWorker;
         bool isFree;
@@ -35,8 +36,6 @@ private:
     std::thread mSubtaskDispatchThread;
 
     std::atomic_int mCurrentUniqueId = 1;
-
-    static auto socketAddress(const std::string &host, int port) -> std::string;
 
     auto bindRpcServerFunctions() -> void;
 

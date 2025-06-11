@@ -34,7 +34,7 @@ private:
     auto receiveJob(const Subtask& subtask) -> bool;
     auto processJobsQueues() -> void;
     auto launchJobsFromQueue() -> void;
-    auto sendFinishedJobsResults() -> void;
+    auto sendFinishedJobsNotifications() -> void;
 
     auto teardown() -> void;
 

@@ -34,12 +34,11 @@ auto Tracker::run() -> int {
 auto Tracker::registerWorker(const std::string &host, int port) -> Id {
     // TODO check duplicates
     const auto id = this->generateUniqueId();
-    const auto socketAddr = socketAddress(host, port);
 
     mClients[id] = Client {
         .id = id,
-        .socketAddr = socketAddr,
-        .client = std::make_unique<rpc::client>(host, port),
+        .socketAddres = SocketAddress {host, port},
+        .rpcClient = std::make_unique<rpc::client>(host, port),
         .lastHeartbeat = std::chrono::system_clock::now(),
         .isWorker = true, // TODO add condition
         .isFree = true};
@@ -55,7 +54,7 @@ auto Tracker::unregisterWorker(const int id) -> void {
 auto Tracker::printWorkers() const -> void {
     std::string workersInfo = "Workers:";
     for (const auto& client: mClients | std::views::values) {
-        workersInfo += std::format("\n  {}", client.socketAddr);
+        workersInfo += std::format("\n  {}", client.socketAddres.toString());
     }
     lg::debug(workersInfo);
 }
@@ -106,15 +105,15 @@ auto Tracker::dispatchJobsFromQueue() -> void {
                 break;
             }
             auto& worker = *nextWorker;
-            accepted = worker.client->call(RPC_DISPATCH_JOB, subtask).as<bool>();
+            accepted = worker.rpcClient->call(RPC_DISPATCH_JOB, subtask).as<bool>();
             if (accepted) {
-                lg::debug("Subtask {} accepted by worker {}", subtask.functionName, worker.id);
+                lg::debug("Subtask {} accepted by worker {}.", subtask.functionName, worker.id);
                 subtask.status = Subtask::SUBMITTED;
                 worker.isFree = false;
                 mSubtaskQueue.pop();
             }
             else {
-                lg::debug("Subtask {} NOT accepted by worker {}", subtask.functionName, worker.id);
+                lg::debug("Subtask {} NOT accepted by worker {}!", subtask.functionName, worker.id);
             }
             ++nextWorker;
         }
@@ -128,10 +127,6 @@ auto Tracker::markSubtaskCompleted(const Id workerId, const Id subtaskId) -> voi
     subtask.completedBy = workerId;
 }
 
-auto Tracker::socketAddress(const std::string &host, const int port) -> std::string {
-    return std::format("{}:{}", host, std::to_string(port));
-}
-
 auto Tracker::bindRpcServerFunctions() -> void {
     mRpcServer.bind(RPC_REGISTER_CLIENT, [this](const std::string& host, const int port) {
         return this->registerWorker(host, port);
@@ -141,7 +136,7 @@ auto Tracker::bindRpcServerFunctions() -> void {
     });
     mRpcServer.bind(RPC_TEST_ANNOUNCEMENT, [this](const std::string& mess) {
         for (const auto& client : mClients | std::views::values) {
-            client.client->call(RPC_TEST_ANNOUNCEMENT_BROADCAST, mess);
+            client.rpcClient->call(RPC_TEST_ANNOUNCEMENT_BROADCAST, mess);
         }
     });
     mRpcServer.bind(RPC_SUBMIT_TASK_TO_TRACKER, [this](const Task& task) {
@@ -159,9 +154,10 @@ auto Tracker::bindRpcServerFunctions() -> void {
 auto Tracker::refreshClientList() -> void {
     const auto now = std::chrono::system_clock::now();
     for (auto it = mClients.begin(); it != mClients.cend(); ) {
-        if (std::chrono::duration_cast<std::chrono::milliseconds>(
-                now - it->second.lastHeartbeat).count() > CLIENT_HEARTBEAT_MAX_INTERVAL_MS) {
-            lg::info("Removed client {} after no heartbeat", it->first);
+        const auto&& timeSinceLastHeartbeat = std::chrono::duration_cast<std::chrono::milliseconds>(
+            now - it->second.lastHeartbeat).count();
+        if (timeSinceLastHeartbeat > CLIENT_HEARTBEAT_MAX_INTERVAL_MS) {
+            lg::info("Removed client {} after no heartbeat.", it->first);
             mClients.erase(it++);
         } else {
             ++it;

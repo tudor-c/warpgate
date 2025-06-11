@@ -19,4 +19,8 @@ namespace util {
             std::this_thread::sleep_for(std::chrono::milliseconds(intervalMs));
         }
     }
+
+    auto getSocketAddress(const std::string &host, const int port) -> std::string {
+        return std::format("{}:{}", host, std::to_string(port));
+    }
 }
