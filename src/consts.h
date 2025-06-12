@@ -7,11 +7,13 @@ constexpr auto RPC_SEND_FILE_TEST = "sendFile";
 constexpr auto RPC_SUBMIT_TASK_TO_TRACKER = "submitTaskToTracker";
 constexpr auto RPC_HEARTBEAT = "heartbeat";
 constexpr auto RPC_ANNOUNCE_SUBTASK_COMPLETED = "markSubtaskCompleted";
+constexpr auto RPC_FETCH_JOB_COMPLETER_ADDRESS = "jobCompleterAddr";
 
 // RPC Client function names
 constexpr auto RPC_TEST_ANNOUNCEMENT = "testAnnounce";
 constexpr auto RPC_TEST_ANNOUNCEMENT_BROADCAST = "testAnnounceBroadcast";
 constexpr auto RPC_DISPATCH_JOB = "dispatchJob";
+constexpr auto RPC_FETCH_SUBTASK_RESULT = "fetchSubtaskResult";
 
 // Connection parameters
 constexpr auto LOCALHOST = "127.0.0.1";

@@ -14,7 +14,6 @@ Client::Client(
         mTrackerPort(trackerPort),
         mTrackerConn(trackerHost, trackerPort),
         mOwnServer(FREE_PORT)
-        // mExecutorPool(std::vector<std::future<std::string>>())
         {
 
     lg::info("Starting worker at {}:{} 🌐",
@@ -72,6 +71,9 @@ auto Client::bindRcpServerFunctions() -> void {
     mOwnServer.bind(RPC_DISPATCH_JOB, [this](const Subtask& subtask) {
         return this->receiveJob(subtask);
     });
+    mOwnServer.bind(RPC_FETCH_SUBTASK_RESULT, [this](const Id subtaskId) {
+        return this->extractFinishedJobResult(subtaskId);
+    });
 }
 
 auto Client::registerAsClient() -> bool {
@@ -126,27 +128,56 @@ auto Client::launchJobsFromQueue() -> void {
         const auto subtask = std::move(mJobQueue.front());
         mJobQueue.pop();
 
-        lg::debug("Executing subtask {}...", subtask.functionName);
         mWorkerThreads.insert({subtask.id, std::thread([this, subtask]() {
-            lg::debug("Actively working on subtask {}...", subtask.functionName);
+            lg::debug("Starting working on subtask {}...", subtask.functionName);
+            auto previousResults = this->fetchSubtaskParameterData(subtask);
+            lg::debug("Previous results:");
+            for (const auto& res : previousResults) {
+                lg::debug(" - {}", res);
+            }
+
 
             // job done 🧌
+            mFinishedJobs.push(subtask.id);
             mResults.insert({subtask.id, std::format("result-of:{}", subtask.functionName)});
         })});
     }
 }
 
+auto Client::fetchSubtaskResultsFromPeer(const Id subtaskId) -> ResultType {
+    const auto [host, port] = mTrackerConn.call(RPC_FETCH_JOB_COMPLETER_ADDRESS,
+        subtaskId).as<SocketAddress>();
+    rpc::client peerConnection(host, port);
+    return peerConnection.call(RPC_FETCH_SUBTASK_RESULT, subtaskId)
+        .as<ResultType>();
+}
+
+auto Client::fetchSubtaskParameterData(const Subtask& subtask) -> std::vector<ResultType> {
+    return subtask.dependencyIds
+        | std::views::transform(
+            [this](const Id& dependencyId) {
+                return fetchSubtaskResultsFromPeer(dependencyId);
+        })
+        | std::ranges::to<std::vector>();
+}
+
 auto Client::sendFinishedJobsNotifications() -> void {
-    for (auto it = mResults.begin(); it != mResults.end();) {
-        const auto result = std::move(it->second);
-        const auto jobId = it->first;
-        mResults.erase(it++);
+    while (!mFinishedJobs.empty()) {
+        const auto jobId = mFinishedJobs.front();
+        mFinishedJobs.pop();
 
         mWorkerThreads.at(jobId).join();
         mWorkerThreads.erase(jobId);
         lg::debug("Announcing finished job: {}...", jobId);
         mTrackerConn.call(RPC_ANNOUNCE_SUBTASK_COMPLETED, mOwnId, jobId);
     }
+}
+
+auto Client::extractFinishedJobResult(Id subtaskId) -> ResultType {
+    const auto result = std::move(mResults.at(subtaskId));
+    mResults.erase(subtaskId);
+    return result;
+    // return "'some-data'";
 }
 
 auto Client::getOwnPort() const -> int {

@@ -5,7 +5,6 @@
 #include <rpc/server.h>
 
 #include "Task.h"
-#include "utils.h"
 #include "types.h"
 
 class Tracker {
@@ -17,7 +16,7 @@ public:
 
     struct Client {
         int id;
-        SocketAddress socketAddres;
+        SocketAddress socketAddress;
         std::unique_ptr<rpc::client> rpcClient;
         std::chrono::time_point<std::chrono::system_clock> lastHeartbeat;
         bool isWorker;
@@ -48,6 +47,8 @@ private:
     auto enqueueAvailableJobs() -> void;
     auto dispatchJobsFromQueue() -> void;
     auto markSubtaskCompleted(Id workerId, Id subtaskId) -> void;
+
+    auto getJobCompleterSocketAddress(Id subtaskId) -> SocketAddress;
 
     auto refreshClientList() -> void;
     auto refreshClientHeartbeat(Id clientId) -> void;

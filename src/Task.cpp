@@ -7,6 +7,7 @@
 #include "Task.h"
 
 #include "log.h"
+#include "types.h"
 
 using json = nlohmann::json;
 
@@ -44,7 +45,7 @@ Task::Task(const std::string& path) {
         mSubtasks.emplace(index, Subtask {
             .index = index,
             .functionName = functionName,
-            .dependsOn = dependsOn,
+            .dependencyIndices = dependsOn,
             .status = Subtask::AVAILABLE});
     }
 }
@@ -57,8 +58,8 @@ auto Task::printStructure() const -> void {
             subtaskInfo += "\n";
         }
         first = false;
-        subtaskInfo += std::format(" - id: {}, name: {}, dependsOn: {}",
-            subtask.index, subtask.functionName, subtask.dependsOn);
+        subtaskInfo += std::format(" - index: {}, name: {}, dependsOn: {}",
+            subtask.index, subtask.functionName, subtask.dependencyIndices);
     }
     lg::debug("Task: {}, root: {}, subtasks:\n{}", mName, mRootIndex, subtaskInfo);
 }
@@ -84,7 +85,7 @@ auto Task::isCompleted() const -> bool {
 
 auto Task::isSubtaskAvailable(const Subtask& subtask) const -> bool {
     return subtask.status == Subtask::AVAILABLE &&
-        std::ranges::all_of(subtask.dependsOn, [this](const Id dependencyId) {
+        std::ranges::all_of(subtask.dependencyIndices, [this](const Id dependencyId) {
           return mSubtasks.at(dependencyId).status == Subtask::COMPLETED;
         });
 }

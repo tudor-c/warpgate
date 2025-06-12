@@ -6,6 +6,7 @@
 
 #include <rpc/msgpack.hpp>
 
+#include "types.h"
 #include "utils.h"
 
 
@@ -21,11 +22,13 @@ struct Subtask {
     // function name of subtask's entry point
     std::string functionName;
     // indexes of dependency subtasks
-    std::vector<int> dependsOn;
+    std::vector<int> dependencyIndices;
+    // unique ids of dependency subtasks, assigned after subtask is registered by tracker
+    std::vector<Id> dependencyIds;
     // status of the subtask, maintained by the tracker
     Status status = AVAILABLE;
 
-    MSGPACK_DEFINE(index, id, completedBy, functionName, dependsOn, status)
+    MSGPACK_DEFINE(index, id, completedBy, functionName, dependencyIndices, dependencyIds, status)
 };
 
 MSGPACK_ADD_ENUM(Subtask::Status);

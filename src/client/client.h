@@ -7,7 +7,7 @@
 #include <rpc/server.h>
 
 #include "Task.h"
-#include "utils.h"
+#include "types.h"
 
 class Client {
 
@@ -34,7 +34,10 @@ private:
     auto receiveJob(const Subtask& subtask) -> bool;
     auto processJobsQueues() -> void;
     auto launchJobsFromQueue() -> void;
+    auto fetchSubtaskResultsFromPeer(Id subtaskId) -> ResultType;
+    auto fetchSubtaskParameterData(const Subtask&) -> std::vector<ResultType>;
     auto sendFinishedJobsNotifications() -> void;
+    auto extractFinishedJobResult(Id subtaskId) -> ResultType;
 
     auto teardown() -> void;
 
@@ -51,6 +54,7 @@ private:
     std::thread mJobThread;
 
     std::queue<Subtask> mJobQueue;
+    std::queue<Id> mFinishedJobs;
     // pairs of finished subtask id and its result
     // TODO change result type from string to actual data
     std::queue<std::pair<Id, std::string>> mJobResults;
