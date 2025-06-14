@@ -7,6 +7,8 @@ import sys
 from utils import *
 
 
+TARGET_NAME = 'warpgate'
+
 def run_command(command: str) -> int:
     print(f'Executing: {command}')
 
@@ -56,6 +58,17 @@ def clear_build_output(build_type: BuildType):
     except Exception as e:
         print(f'Error during cleanup: {str(e)}')
 
+
+def create_instances(instance_count: str, build_type: BuildType):
+    outdir = build_path_by_type(build_type)
+    target_binary = os.path.join(outdir, TARGET_NAME)
+    for i in range(1, int(instance_count) + 1):
+        instance_dir = os.path.join(outdir, str(i))
+        os.mkdir(instance_dir)
+        copy_target = os.path.join(instance_dir, TARGET_NAME)
+        shutil.copy(target_binary, copy_target)
+
+
 def main():
     parser = argparse.ArgumentParser(prog='build-script')
     parser.add_argument('--release', action='store_true', dest='release')
@@ -64,6 +77,7 @@ def main():
     parser.add_argument('--no-build', action='store_true', dest='no_build')
     parser.add_argument('-r', '--run', action='store_true', dest='run')
     parser.add_argument('remainder', nargs='*')
+    parser.add_argument('--instances', '-i', dest='instances')
 
     args = parser.parse_args()
     build_type = BuildType.DEBUG if not args.release else BuildType.RELEASE
@@ -84,6 +98,9 @@ def main():
     status = 0
     if not args.no_build:
         status = build_target('warpgate', build_type)
+
+    if args.instances:
+        create_instances(args.instances, build_type)
 
     status_code = 0
     if args.run:
