@@ -21,12 +21,9 @@ Task::Task(const std::string& path) {
     }
 
     auto anyMissing = [&](const json& configEntry, const std::initializer_list<std::string_view>& keys) {
-        for (auto& key : keys) {
-            if (!configEntry.contains(key)) {
-                return true;
-            }
-        }
-        return false;
+        return std::ranges::any_of(keys, [&configEntry](const auto& key) {
+            return !configEntry.contains(key);
+        });
     };
 
     if (anyMissing(config, {JSON_TASK_NAME, JSON_TASK_ROOT, JSON_SUBTASKS})) {
@@ -46,6 +43,7 @@ Task::Task(const std::string& path) {
             .index = index,
             .functionName = functionName,
             .dependencyIndices = dependsOn,
+            .dependencyIds = {},
             .status = Subtask::AVAILABLE});
     }
 }

@@ -17,6 +17,8 @@ struct Subtask {
     int index = -1;
     // unique id assigned by the tracker, not present in json representation
     Id id = -1;
+    // the unique id of the containing task, as assigned bt the tracker
+    Id taskId = -1;
     // id of the worker that completed this subtask
     Id completedBy = -1;
     // function name of subtask's entry point
@@ -28,7 +30,7 @@ struct Subtask {
     // status of the subtask, maintained by the tracker
     Status status = AVAILABLE;
 
-    MSGPACK_DEFINE(index, id, completedBy, functionName, dependencyIndices, dependencyIds, status)
+    MSGPACK_DEFINE(index, id, taskId, completedBy, functionName, dependencyIndices, dependencyIds, status)
 };
 
 MSGPACK_ADD_ENUM(Subtask::Status);

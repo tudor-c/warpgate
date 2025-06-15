@@ -23,12 +23,18 @@ auto Warpgate::run() -> int {
     if (mIsClientSelected) {
         // can be a worker only if it isn't an Acquirer TODO add flag for this
         const bool registerAsWorker = mTaskConfigPath.empty();
-        Client client(
-            mTrackerHost,
-            mTrackerPort,
-            registerAsWorker,
-            mTaskConfigPath);
-        return client.run();
+        try {
+            Client client(
+                mTrackerHost,
+                mTrackerPort,
+                registerAsWorker,
+                mTaskConfigPath,
+                mTaskLibPath);
+            return client.run();
+        }
+        catch (const std::runtime_error& err) {
+            lg::error(err.what());
+        }
     }
     return 0;
 }
@@ -54,12 +60,12 @@ auto Warpgate::parseArgs(const int argc, const char *argv[]) -> bool {
         .help("Path to task file")
         .store_into(mTaskConfigPath)
         .default_value("");
+    clientArgs.add_argument(FLAG_CLIENT_TASK_LIB_PATH)
+        .help("Path to the dynamic library containing subtask functions")
+        .store_into(mTaskLibPath)
+        .default_value("");
 
     argparse::ArgumentParser trackerArgs(TRACKER_SUBPARSER);
-    trackerArgs.add_argument("--test")
-        .store_into(mTrackerTestArg)
-        .default_value(false)
-        .implicit_value(true);
 
     program.add_subparser(clientArgs);
     program.add_subparser(trackerArgs);

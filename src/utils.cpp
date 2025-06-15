@@ -4,16 +4,17 @@
 #include "utils.h"
 
 namespace util {
-    auto readTextFile(const std::string &path) -> std::string {
-        const auto size = file_size(std::filesystem::path(path));
-        std::string buffer(size, '\0');
-        std::ifstream file(path);
-        file.read(&buffer[0], static_cast<long>(size));
+    auto readBinaryFile(const std::string &path) -> std::vector<std::byte> {
+        std::filesystem::path inputFilePath(path);
+        auto len = std::filesystem::file_size(inputFilePath);
+        std::vector<std::byte> buffer(len);
+        std::ifstream file(path, std::ios::binary);
+        file.read(reinterpret_cast<char*>(buffer.data()), len);
         return buffer;
     }
 
     auto scheduleTask(const int intervalMs,
-        const std::function<void()>& fn, const std::function<bool()>& shouldEnd) -> void {
+                      const std::function<void()>& fn, const std::function<bool()>& shouldEnd) -> void {
         while (!shouldEnd()) {
             fn();
             std::this_thread::sleep_for(std::chrono::milliseconds(intervalMs));

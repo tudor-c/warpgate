@@ -7,13 +7,13 @@ constexpr auto RPC_SEND_FILE_TEST = "sendFile";
 constexpr auto RPC_SUBMIT_TASK_TO_TRACKER = "submitTaskToTracker";
 constexpr auto RPC_HEARTBEAT = "heartbeat";
 constexpr auto RPC_ANNOUNCE_SUBTASK_COMPLETED = "markSubtaskCompleted";
-constexpr auto RPC_FETCH_JOB_COMPLETER_ADDRESS = "jobCompleterAddr";
+constexpr auto RPC_FETCH_JOB_COMPLETER_ADDRESS = "jobCompleterAddress";
+constexpr auto RPC_FETCH_TASK_ACQUIRER_ADDRESS = "taskAcquirerAddress";
 
 // RPC Client function names
-constexpr auto RPC_TEST_ANNOUNCEMENT = "testAnnounce";
-constexpr auto RPC_TEST_ANNOUNCEMENT_BROADCAST = "testAnnounceBroadcast";
 constexpr auto RPC_DISPATCH_JOB = "dispatchJob";
 constexpr auto RPC_FETCH_SUBTASK_RESULT = "fetchSubtaskResult";
+constexpr auto RPC_FETCH_LIB_CONTENT = "fetchLibContent";
 
 // Connection parameters
 constexpr auto LOCALHOST = "127.0.0.1";
@@ -26,6 +26,7 @@ constexpr auto TIMEOUT_MS = 3000;
 constexpr auto FLAG_CLIENT_TRACKER_HOST = "--host";
 constexpr auto FLAG_CLIENT_TRACKER_PORT = "--port";
 constexpr auto FLAG_CLIENT_TASK_CONFIG_PATH = "--task";
+constexpr auto FLAG_CLIENT_TASK_LIB_PATH = "--lib";
 
 // JSON task config keys
 constexpr auto JSON_TASK_NAME = "name";

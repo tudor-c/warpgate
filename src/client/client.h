@@ -16,7 +16,8 @@ public:
         const std::string& trackerHost,
         int trackerPort,
         bool registerAsWorker,
-        const std::string &taskConfigPath);
+        const std::string& taskConfigPath,
+        const std::string& taskLibPath);
 
     ~Client() = default;
 
@@ -36,6 +37,7 @@ private:
     auto launchJobsFromQueue() -> void;
     auto fetchSubtaskResultsFromPeer(Id subtaskId) -> ResultType;
     auto fetchSubtaskParameterData(const Subtask&) -> std::vector<ResultType>;
+    auto fetchTaskLibContent(Id taskId) -> std::vector<std::byte>;
     auto sendFinishedJobsNotifications() -> void;
     auto extractFinishedJobResult(Id subtaskId) -> ResultType;
 
@@ -46,7 +48,7 @@ private:
     const std::string mTrackerHost;
     const int mTrackerPort;
 
-    rpc::client mTrackerConn;
+    rpc::client mTrackerConnection;
     rpc::server mOwnServer;
 
     std::thread mServerThread;
@@ -62,4 +64,8 @@ private:
     std::unordered_map<Id, std::string> mResults;
     // currently running threads, indexed by subtask id
     std::unordered_map<Id, std::thread> mWorkerThreads;
+    // binary content of the submitted lib file
+    std::vector<std::byte> mOwnLibContent;
+    // binary contents of other peers' libraries identified by task id
+    std::unordered_map<Id, std::vector<std::byte>> mOtherLibsContents;
 };

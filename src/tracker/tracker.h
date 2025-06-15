@@ -27,6 +27,8 @@ private:
     std::unordered_map<Id, Client> mClients; // TODO lock behind RW guard
     rpc::server mRpcServer;
     std::unordered_map<Id, Task> mTasks;
+    // map fron taskId to clientId;
+    std::unordered_map<Id, Id> mTaskAcquirers;
 
     // all subtasks from all tasks
     std::unordered_map<Id, std::reference_wrapper<Subtask>> mAllSubtasks;
@@ -49,6 +51,7 @@ private:
     auto markSubtaskCompleted(Id workerId, Id subtaskId) -> void;
 
     auto getJobCompleterSocketAddress(Id subtaskId) -> SocketAddress;
+    auto getTaskAcquirerSockerAddress(Id taskId) -> SocketAddress;
 
     auto refreshClientList() -> void;
     auto refreshClientHeartbeat(Id clientId) -> void;

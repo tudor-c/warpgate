@@ -65,10 +65,11 @@ auto Tracker::registerTask(const Task& task) -> void {
 
     std::unordered_map<int, Id> indexToId;
 
-    // assign unique Ids to all subtasks
+    // assign taskID and unique Ids to all subtasks
     for (const auto& subtask : mTasks.at(taskId).getAllSubtasks()) {
         const auto id = this->generateUniqueId();
         subtask.get().id = id;
+        subtask.get().taskId = taskId;
         indexToId.insert({subtask.get().index, id});
         mAllSubtasks.insert({id, std::ref(subtask)});
     }
@@ -148,17 +149,17 @@ auto Tracker::getJobCompleterSocketAddress(const Id subtaskId) -> SocketAddress 
     return mClients.at(workerId).socketAddress;
 }
 
+auto Tracker::getTaskAcquirerSockerAddress(const Id taskId) -> SocketAddress {
+    const auto clientId = mTaskAcquirers.at(taskId);
+    return mClients.at(clientId).socketAddress;
+}
+
 auto Tracker::bindRpcServerFunctions() -> void {
     mRpcServer.bind(RPC_REGISTER_CLIENT, [this](const std::string& host, const int port) {
         return this->registerWorker(host, port);
     });
-    mRpcServer.bind(RPC_UNREGISTER_CLIENT, [this](const Id id) {
-        this->unregisterWorker(id);
-    });
-    mRpcServer.bind(RPC_TEST_ANNOUNCEMENT, [this](const std::string& mess) {
-        for (const auto& client : mClients | std::views::values) {
-            client.rpcClient->call(RPC_TEST_ANNOUNCEMENT_BROADCAST, mess);
-        }
+    mRpcServer.bind(RPC_UNREGISTER_CLIENT, [this](const Id clientId) {
+        this->unregisterWorker(clientId);
     });
     mRpcServer.bind(RPC_SUBMIT_TASK_TO_TRACKER, [this](const Task& task) {
         task.printStructure();
@@ -172,6 +173,9 @@ auto Tracker::bindRpcServerFunctions() -> void {
     });
     mRpcServer.bind(RPC_FETCH_JOB_COMPLETER_ADDRESS, [this](const Id subtaskId) {
         return this->getJobCompleterSocketAddress(subtaskId);
+    });
+    mRpcServer.bind(RPC_FETCH_TASK_ACQUIRER_ADDRESS, [this](const Id taskId) {
+        return this->getTaskAcquirerSockerAddress(taskId);
     });
 }
 
