@@ -14,40 +14,21 @@ Client::Client(
         mTrackerHost(trackerHost),
         mTrackerPort(trackerPort),
         mTrackerConnection(trackerHost, trackerPort),
-        mOwnServer(FREE_PORT)
-        {
+        mOwnServer(FREE_PORT),
+        mTaskConfigPath(taskConfigPath),
+        mTaskLibPath(taskLibPath) {
 
     lg::info("Starting worker at {}:{} 🌐",
         LOCALHOST, mOwnServer.port());
-
     this->bindRcpServerFunctions();
-
-    if (!taskConfigPath.empty() && !taskLibPath.empty()) {
-        std::unique_ptr<Task> task;
-        try {
-            task = std::make_unique<Task>(taskConfigPath);
-        }
-        catch (std::runtime_error& e) {
-            spdlog::error(e.what());
-        }
-
-        mOwnLibContent = util::readBinaryFile(taskLibPath);
-        if (task && !mOwnLibContent.empty()) {
-            submitTaskToTracker(*task);
-        }
-        else {
-            throw std::runtime_error(std::format("Could not read task config or lib files!"));
-        }
-    }
-    else if (!taskConfigPath.empty() || !taskLibPath.empty()) {
-        throw std::runtime_error(std::format(
-            "Both `{}` and `{}` are needed to work together!",
-            FLAG_CLIENT_TASK_CONFIG_PATH, FLAG_CLIENT_TASK_LIB_PATH));
-    }
 }
 
 auto Client::run() -> int {
     if (!registerAsClient()) {
+        return 1;
+    }
+
+    if (!readAndSubmitTask()) {
         return 1;
     }
 
@@ -111,8 +92,35 @@ auto Client::unregisterAsClient() -> void {
     mTrackerConnection.call(RPC_UNREGISTER_CLIENT, mOwnId);
 }
 
+auto Client::readAndSubmitTask() -> bool {
+    if (!mTaskConfigPath.empty() && !mTaskLibPath.empty()) {
+        std::unique_ptr<Task> task;
+        try {
+            task = std::make_unique<Task>(mTaskConfigPath);
+        }
+        catch (std::runtime_error& e) {
+            spdlog::error(e.what());
+        }
+
+        mOwnLibContent = util::readBinaryFile(mTaskLibPath);
+        if (task && !mOwnLibContent.empty()) {
+            submitTaskToTracker(*task);
+        }
+        else {
+            lg::error("Could not read task config or lib files!");
+            return false;
+        }
+    }
+    else if (!mTaskConfigPath.empty() || !mTaskLibPath.empty()) {
+        lg::error("Both `{}` and `{}` are needed to work together!",
+            FLAG_CLIENT_TASK_CONFIG_PATH, FLAG_CLIENT_TASK_LIB_PATH);
+        return false;
+    }
+    return true;
+}
+
 auto Client::submitTaskToTracker(const Task &task) -> void {
-    mTrackerConnection.call(RPC_SUBMIT_TASK_TO_TRACKER, task);
+    mTrackerConnection.call(RPC_SUBMIT_TASK_TO_TRACKER, task, mOwnId);
 }
 
 auto Client::receiveJob(const Subtask& subtask) -> bool  {
@@ -174,11 +182,12 @@ auto Client::fetchSubtaskParameterData(const Subtask& subtask) -> std::vector<Re
         | std::ranges::to<std::vector>();
 }
 
-auto Client::fetchTaskLibContent(const Id taskId) -> std::vector<std::byte> {
+auto Client::fetchTaskLibContent(const Id taskId) -> std::vector<unsigned char> {
+    lg::debug("Fetching lib for taskId {}", taskId);
     const auto [host, port] = mTrackerConnection.call(RPC_FETCH_TASK_ACQUIRER_ADDRESS,
         taskId).as<SocketAddress>();
     rpc::client acquirer(host, port);
-    return acquirer.call(RPC_FETCH_LIB_CONTENT).as<std::vector<std::byte>>();
+    return acquirer.call(RPC_FETCH_LIB_CONTENT).as<std::vector<unsigned char>>();
 }
 
 auto Client::sendFinishedJobsNotifications() -> void {

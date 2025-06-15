@@ -64,6 +64,7 @@ def create_instances(instance_count: str, build_type: BuildType):
     target_binary = os.path.join(outdir, TARGET_NAME)
     for i in range(1, int(instance_count) + 1):
         instance_dir = os.path.join(outdir, str(i))
+        shutil.rmtree(instance_dir)
         os.mkdir(instance_dir)
         copy_target = os.path.join(instance_dir, TARGET_NAME)
         shutil.copy2(target_binary, copy_target)

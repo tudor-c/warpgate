@@ -59,9 +59,11 @@ auto Tracker::printWorkers() const -> void {
     lg::debug(workersInfo);
 }
 
-auto Tracker::registerTask(const Task& task) -> void {
+auto Tracker::registerTask(const Task& task, const Id acquirerId) -> void {
     const auto taskId = this->generateUniqueId();
     mTasks.insert({taskId, task});
+    mTaskAcquirers.insert({taskId, acquirerId});
+    lg::debug("Assigned id {} to task.", taskId);
 
     std::unordered_map<int, Id> indexToId;
 
@@ -151,7 +153,11 @@ auto Tracker::getJobCompleterSocketAddress(const Id subtaskId) -> SocketAddress 
 
 auto Tracker::getTaskAcquirerSockerAddress(const Id taskId) -> SocketAddress {
     const auto clientId = mTaskAcquirers.at(taskId);
-    return mClients.at(clientId).socketAddress;
+    lg::debug("clientId={}", clientId);
+    auto res = mClients.at(clientId).socketAddress;
+    lg::debug("bbb");
+
+    return res;
 }
 
 auto Tracker::bindRpcServerFunctions() -> void {
@@ -161,9 +167,10 @@ auto Tracker::bindRpcServerFunctions() -> void {
     mRpcServer.bind(RPC_UNREGISTER_CLIENT, [this](const Id clientId) {
         this->unregisterWorker(clientId);
     });
-    mRpcServer.bind(RPC_SUBMIT_TASK_TO_TRACKER, [this](const Task& task) {
+    mRpcServer.bind(RPC_SUBMIT_TASK_TO_TRACKER, [this](const Task& task,
+        const Id acquirerId) {
         task.printStructure();
-        this->registerTask(task);
+        this->registerTask(task, acquirerId);
     });
     mRpcServer.bind(RPC_HEARTBEAT, [this](const Id clientId) {
         this->refreshClientHeartbeat(clientId);

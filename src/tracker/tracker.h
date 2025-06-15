@@ -42,7 +42,7 @@ private:
 
     auto registerWorker(const std::string &host, int port) -> Id;
     auto unregisterWorker(Id id) -> void;
-    auto registerTask(const Task&) -> void;
+    auto registerTask(const Task&, Id acquirerId) -> void;
     auto printWorkers() const -> void;
 
     auto updateJobQueue() -> void;

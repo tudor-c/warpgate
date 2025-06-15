@@ -4,10 +4,10 @@
 #include "utils.h"
 
 namespace util {
-    auto readBinaryFile(const std::string &path) -> std::vector<std::byte> {
+    auto readBinaryFile(const std::string &path) -> std::vector<unsigned char> {
         std::filesystem::path inputFilePath(path);
         auto len = std::filesystem::file_size(inputFilePath);
-        std::vector<std::byte> buffer(len);
+        std::vector<unsigned char> buffer(len);
         std::ifstream file(path, std::ios::binary);
         file.read(reinterpret_cast<char*>(buffer.data()), len);
         return buffer;

@@ -28,6 +28,7 @@ private:
 
     auto registerAsClient() -> bool;
     auto unregisterAsClient() -> void;
+    auto readAndSubmitTask() -> bool;
     auto getOwnPort() const -> int;
 
     auto isBusy() const -> bool;
@@ -37,7 +38,7 @@ private:
     auto launchJobsFromQueue() -> void;
     auto fetchSubtaskResultsFromPeer(Id subtaskId) -> ResultType;
     auto fetchSubtaskParameterData(const Subtask&) -> std::vector<ResultType>;
-    auto fetchTaskLibContent(Id taskId) -> std::vector<std::byte>;
+    auto fetchTaskLibContent(Id taskId) -> std::vector<unsigned char>;
     auto sendFinishedJobsNotifications() -> void;
     auto extractFinishedJobResult(Id subtaskId) -> ResultType;
 
@@ -47,6 +48,9 @@ private:
 
     const std::string mTrackerHost;
     const int mTrackerPort;
+
+    const std::string mTaskConfigPath;
+    const std::string mTaskLibPath;
 
     rpc::client mTrackerConnection;
     rpc::server mOwnServer;
@@ -65,7 +69,7 @@ private:
     // currently running threads, indexed by subtask id
     std::unordered_map<Id, std::thread> mWorkerThreads;
     // binary content of the submitted lib file
-    std::vector<std::byte> mOwnLibContent;
+    std::vector<unsigned char> mOwnLibContent;
     // binary contents of other peers' libraries identified by task id
-    std::unordered_map<Id, std::vector<std::byte>> mOtherLibsContents;
+    std::unordered_map<Id, std::vector<unsigned char>> mOtherLibsContents;
 };
