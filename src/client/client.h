@@ -8,6 +8,7 @@
 
 #include "Task.h"
 #include "types.h"
+#include "dynamic_library/library.h"
 
 class Client {
 
@@ -41,6 +42,7 @@ private:
     auto fetchTaskLibContent(Id taskId) -> std::vector<unsigned char>;
     auto sendFinishedJobsNotifications() -> void;
     auto extractFinishedJobResult(Id subtaskId) -> ResultType;
+    auto fetchAndLoadTaskLibContent(const Subtask&) -> void;
 
     auto teardown() -> void;
 
@@ -70,6 +72,6 @@ private:
     std::unordered_map<Id, std::thread> mWorkerThreads;
     // binary content of the submitted lib file
     std::vector<unsigned char> mOwnLibContent;
-    // binary contents of other peers' libraries identified by task id
-    std::unordered_map<Id, std::vector<unsigned char>> mOtherLibsContents;
+    // other peers' libraries identified by task id
+    std::unordered_map<Id, DynamicLibrary> mOtherTaskLibs;
 };

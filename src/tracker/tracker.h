@@ -50,8 +50,8 @@ private:
     auto dispatchJobsFromQueue() -> void;
     auto markSubtaskCompleted(Id workerId, Id subtaskId) -> void;
 
-    auto getJobCompleterSocketAddress(Id subtaskId) -> SocketAddress;
-    auto getTaskAcquirerSockerAddress(Id taskId) -> SocketAddress;
+    auto getJobCompleterSocketAddress(Id subtaskId) const -> SocketAddress;
+    auto getTaskAcquirerSockerAddress(Id taskId) const -> SocketAddress;
 
     auto refreshClientList() -> void;
     auto refreshClientHeartbeat(Id clientId) -> void;

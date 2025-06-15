@@ -146,17 +146,14 @@ auto Tracker::markSubtaskCompleted(const Id workerId, const Id subtaskId) -> voi
     subtask.completedBy = workerId;
 }
 
-auto Tracker::getJobCompleterSocketAddress(const Id subtaskId) -> SocketAddress {
+auto Tracker::getJobCompleterSocketAddress(const Id subtaskId) const -> SocketAddress {
     const auto workerId = mAllSubtasks.at(subtaskId).get().completedBy;
     return mClients.at(workerId).socketAddress;
 }
 
-auto Tracker::getTaskAcquirerSockerAddress(const Id taskId) -> SocketAddress {
+auto Tracker::getTaskAcquirerSockerAddress(const Id taskId) const -> SocketAddress {
     const auto clientId = mTaskAcquirers.at(taskId);
-    lg::debug("clientId={}", clientId);
     auto res = mClients.at(clientId).socketAddress;
-    lg::debug("bbb");
-
     return res;
 }
 

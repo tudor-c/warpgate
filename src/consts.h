@@ -44,3 +44,6 @@ constexpr int TRACKER_DISPATCH_SUBTASKS_INTERVAL_MS = 200;
 
 // Max numbers of jobs a worker can take at the same time
 constexpr int ACTIVE_JOB_LIMIT = 1;
+
+// to use with std::format with taskId as field
+constexpr auto TEMP_LIB_FILENAME_TEMPLATE = "lib_task_{}";

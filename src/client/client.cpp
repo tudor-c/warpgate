@@ -1,6 +1,8 @@
 #include <format>
+#include <fstream>
 
 #include "client.h"
+
 #include "consts.h"
 #include "log.h"
 #include "../Task.h"
@@ -13,10 +15,10 @@ Client::Client(
     const std::string& taskLibPath) :
         mTrackerHost(trackerHost),
         mTrackerPort(trackerPort),
-        mTrackerConnection(trackerHost, trackerPort),
-        mOwnServer(FREE_PORT),
         mTaskConfigPath(taskConfigPath),
-        mTaskLibPath(taskLibPath) {
+        mTaskLibPath(taskLibPath),
+        mTrackerConnection(trackerHost, trackerPort),
+        mOwnServer(FREE_PORT) {
 
     lg::info("Starting worker at {}:{} 🌐",
         LOCALHOST, mOwnServer.port());
@@ -144,19 +146,17 @@ auto Client::launchJobsFromQueue() -> void {
         mJobQueue.pop();
 
         mWorkerThreads.insert({subtask.id, std::thread([this, subtask]() {
-            lg::debug("Starting working on subtask {}...", subtask.functionName);
             const auto previousResults = this->fetchSubtaskParameterData(subtask);
             lg::debug("Previous results:");
 
-            const Id taskId = subtask.taskId;
-            if (!mOtherLibsContents.contains(taskId)) {
-                mOtherLibsContents[taskId] = std::move(this->fetchTaskLibContent(taskId));
-                lg::debug("Copied lib for {}, size is: {}", subtask.functionName,
-                    mOtherLibsContents.at(taskId).size());
+            if (!mOtherTaskLibs.contains(subtask.taskId)) {
+                this->fetchAndLoadTaskLibContent(subtask);
             }
             for (const auto& res : previousResults) {
                 lg::debug(" - {}", res);
             }
+            const auto func = mOtherTaskLibs.at(subtask.taskId).loadFunction(subtask.functionName);
+            func();
 
             // job done 🧌
             mFinishedJobs.push(subtask.id);
@@ -206,7 +206,27 @@ auto Client::extractFinishedJobResult(const Id subtaskId) -> ResultType {
     const auto result = std::move(mResults.at(subtaskId));
     mResults.erase(subtaskId);
     return result;
-    // return "'some-data'";
+}
+
+auto Client::fetchAndLoadTaskLibContent(const Subtask& subtask) -> void {
+    const auto& taskId = subtask.taskId;
+    const auto& libContent = this->fetchTaskLibContent(taskId);
+    char tempTemplate[] = "/tmp/tempXXXXXX";
+
+    const int fd = mkstemp(tempTemplate);
+    if (fd == -1) {
+        throw std::runtime_error("Error creating temporary file\n");
+    }
+    close(fd);
+    std::ofstream dynLibFile(tempTemplate, std::ios::binary);
+
+    dynLibFile.write(reinterpret_cast<const char*>(libContent.data()), libContent.size());
+    dynLibFile.close();
+
+    mOtherTaskLibs.insert({taskId, DynamicLibrary(tempTemplate)});
+    lg::debug("Loaded lib for {}, size is: {}B", subtask.functionName, libContent.size());
+
+    unlink(tempTemplate);
 }
 
 auto Client::getOwnPort() const -> int {
