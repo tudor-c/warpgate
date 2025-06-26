@@ -48,6 +48,7 @@ private:
     auto updateJobQueue() -> void;
     auto enqueueAvailableJobs() -> void;
     auto dispatchJobsFromQueue() -> void;
+    auto announceFinishedTasks() -> void;
     auto markSubtaskCompleted(Id workerId, Id subtaskId) -> void;
 
     auto getJobCompleterSocketAddress(Id subtaskId) const -> SocketAddress;

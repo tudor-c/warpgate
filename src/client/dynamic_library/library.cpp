@@ -20,10 +20,12 @@ auto DynamicLibrary::isLoaded() const -> bool {
     return mHandle != nullptr;
 }
 
-auto DynamicLibrary::loadFunction(const std::string &name) const -> void(*)() {
+auto DynamicLibrary::loadFunction(const std::string &name) const ->
+        std::string(*)(std::vector<std::string>) {
     if (!isLoaded()) {
         return nullptr;
     }
-    return reinterpret_cast<void(*)()>(dlsym(mHandle, name.c_str()));
+    return reinterpret_cast<std::string(*)(std::vector<std::string>)>(
+        dlsym(mHandle, name.c_str()));
 }
 

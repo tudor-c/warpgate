@@ -43,6 +43,7 @@ private:
     auto sendFinishedJobsNotifications() -> void;
     auto extractFinishedJobResult(Id subtaskId) -> ResultType;
     auto fetchAndLoadTaskLibContent(const Subtask&) -> void;
+    auto processFinishedTask(const SocketAddress& taskCompleter) -> void;
 
     auto teardown() -> void;
 
@@ -61,6 +62,8 @@ private:
     std::thread mHeartbeatThread;
     std::thread mJobThread;
 
+    // task that this client submitted to the tracker
+    std::unique_ptr<Task> mOwnTask;
     std::queue<Subtask> mJobQueue;
     std::queue<Id> mFinishedJobs;
     // pairs of finished subtask id and its result

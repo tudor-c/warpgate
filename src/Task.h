@@ -47,6 +47,7 @@ public:
     auto getAllSubtasks() -> std::vector<std::reference_wrapper<Subtask>>;
     auto isCompleted() const -> bool;
     auto isSubtaskAvailable(const Subtask&) const -> bool;
+    auto getRootSubtask() -> std::reference_wrapper<Subtask>;
 
     MSGPACK_DEFINE(mName, mRootIndex, mSubtasks)
 

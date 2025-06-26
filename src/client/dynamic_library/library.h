@@ -7,7 +7,7 @@ public:
     explicit DynamicLibrary(const std::string& path);
 
     auto isLoaded() const -> bool;
-    auto loadFunction(const std::string &name) const -> void(*)();
+    auto loadFunction(const std::string &name) const -> std::string(*)(std::vector<std::string>);
 
 private:
     void* mHandle;

@@ -90,6 +90,7 @@ auto Tracker::registerTask(const Task& task, const Id acquirerId) -> void {
 auto Tracker::updateJobQueue() -> void {
     this->enqueueAvailableJobs();
     this->dispatchJobsFromQueue();
+    this->announceFinishedTasks();
 }
 
 auto Tracker::enqueueAvailableJobs() -> void {
@@ -144,6 +145,27 @@ auto Tracker::markSubtaskCompleted(const Id workerId, const Id subtaskId) -> voi
     auto& subtask = mAllSubtasks.at(subtaskId).get();
     subtask.status = Subtask::COMPLETED;
     subtask.completedBy = workerId;
+}
+
+auto Tracker::announceFinishedTasks() -> void {
+    for (auto it = mTasks.begin(); it != mTasks.end();) {
+        auto& taskId = it->first;
+        auto& task = it->second;
+        if (!task.isCompleted()) {
+            ++it;
+            continue;
+        }
+        const auto& rootSubtask = task.getRootSubtask();
+        const auto& acquirerId = mTaskAcquirers.at(taskId);
+        lg::debug("Announcing finished task.. {}", rootSubtask.get().completedBy);
+        const auto& completerAddress = mClients.at(rootSubtask.get().completedBy)
+            .socketAddress;
+        lg::debug("Announcing finished task..");
+        mClients.at(acquirerId).rpcClient->call(
+            RPC_ANNOUNCE_TASK_COMPLETED, completerAddress);
+        // mTasks.erase(it++);
+        it++;
+    }
 }
 
 auto Tracker::getJobCompleterSocketAddress(const Id subtaskId) const -> SocketAddress {

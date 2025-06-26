@@ -87,3 +87,12 @@ auto Task::isSubtaskAvailable(const Subtask& subtask) const -> bool {
           return mSubtasks.at(dependencyId).status == Subtask::COMPLETED;
         });
 }
+
+auto Task::getRootSubtask() -> std::reference_wrapper<Subtask> {
+    for (auto& subtask : mSubtasks | std::views::values) {
+        if (subtask.index == mRootIndex) {
+            return std::ref(subtask);
+        }
+    }
+    return std::ref(mSubtasks.begin()->second);
+}

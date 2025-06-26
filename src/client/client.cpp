@@ -64,6 +64,9 @@ auto Client::bindRcpServerFunctions() -> void {
     mOwnServer.bind(RPC_FETCH_LIB_CONTENT, [this] {
         return mOwnLibContent;
     });
+    mOwnServer.bind(RPC_ANNOUNCE_TASK_COMPLETED, [this](const SocketAddress& completer) {
+        this->processFinishedTask(completer);
+    });
 }
 
 auto Client::registerAsClient() -> bool {
@@ -96,17 +99,16 @@ auto Client::unregisterAsClient() -> void {
 
 auto Client::readAndSubmitTask() -> bool {
     if (!mTaskConfigPath.empty() && !mTaskLibPath.empty()) {
-        std::unique_ptr<Task> task;
         try {
-            task = std::make_unique<Task>(mTaskConfigPath);
+            mOwnTask = std::make_unique<Task>(mTaskConfigPath);
         }
         catch (std::runtime_error& e) {
-            spdlog::error(e.what());
+            lg::error(e.what());
         }
 
         mOwnLibContent = util::readBinaryFile(mTaskLibPath);
-        if (task && !mOwnLibContent.empty()) {
-            submitTaskToTracker(*task);
+        if (mOwnTask && !mOwnLibContent.empty()) {
+            submitTaskToTracker(*mOwnTask);
         }
         else {
             lg::error("Could not read task config or lib files!");
@@ -147,20 +149,19 @@ auto Client::launchJobsFromQueue() -> void {
 
         mWorkerThreads.insert({subtask.id, std::thread([this, subtask]() {
             const auto previousResults = this->fetchSubtaskParameterData(subtask);
-            lg::debug("Previous results:");
 
             if (!mOtherTaskLibs.contains(subtask.taskId)) {
                 this->fetchAndLoadTaskLibContent(subtask);
             }
-            for (const auto& res : previousResults) {
-                lg::debug(" - {}", res);
-            }
-            const auto func = mOtherTaskLibs.at(subtask.taskId).loadFunction(subtask.functionName);
-            func();
+            const auto func = mOtherTaskLibs.at(subtask.taskId).loadFunction(
+                subtask.functionName);
+            auto result = func(previousResults);
+            lg::debug("Finished {}, with result: {}", subtask.functionName, result);
 
             // job done 🧌
             mFinishedJobs.push(subtask.id);
-            mResults.insert({subtask.id, std::format("result-of:{}", subtask.functionName)});
+            mResults.insert({subtask.id, std::format("result_of_{}: {}", subtask.functionName,
+                result)});
         })});
     }
 }
@@ -227,6 +228,13 @@ auto Client::fetchAndLoadTaskLibContent(const Subtask& subtask) -> void {
     lg::debug("Loaded lib for {}, size is: {}B", subtask.functionName, libContent.size());
 
     unlink(tempTemplate);
+}
+
+auto Client::processFinishedTask(const SocketAddress &taskCompleter) -> void {
+    rpc::client peerConnection(taskCompleter.host, taskCompleter.port);
+    auto result = peerConnection.call(RPC_FETCH_SUBTASK_RESULT, mOwnTask.get()->getRootSubtask().get().id)
+        .as<ResultType>();
+    lg::info("Received task results: {}", result);
 }
 
 auto Client::getOwnPort() const -> int {

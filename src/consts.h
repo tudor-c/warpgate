@@ -14,6 +14,7 @@ constexpr auto RPC_FETCH_TASK_ACQUIRER_ADDRESS = "taskAcquirerAddress";
 constexpr auto RPC_DISPATCH_JOB = "dispatchJob";
 constexpr auto RPC_FETCH_SUBTASK_RESULT = "fetchSubtaskResult";
 constexpr auto RPC_FETCH_LIB_CONTENT = "fetchLibContent";
+constexpr auto RPC_ANNOUNCE_TASK_COMPLETED = "announceTaskCompleted";
 
 // Connection parameters
 constexpr auto LOCALHOST = "127.0.0.1";
