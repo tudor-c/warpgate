@@ -21,13 +21,11 @@ auto Warpgate::run() -> int {
         return tracker.run();
     }
     if (mIsClientSelected) {
-        // can be a worker only if it isn't an Acquirer TODO add flag for this
-        const bool registerAsWorker = mTaskConfigPath.empty();
         try {
             Client client(
                 mTrackerHost,
                 mTrackerPort,
-                registerAsWorker,
+                mNotWorker,
                 mTaskConfigPath,
                 mOutputPath);
             return client.run();
@@ -63,9 +61,17 @@ auto Warpgate::parseArgs(const int argc, const char *argv[]) -> bool {
     clientArgs.add_argument(FLAG_CLIENT_OUTPUT_PATH)
         .help("Path where the output of the submitted task will be saved")
         .store_into(mOutputPath)
-        .default_value("output.data");
+        .default_value(TASK_OUTPUT_DEFAULT_PATH);
+    clientArgs.add_argument(FLAG_CLIENT_NOT_WORKER)
+        .help("Node will only request a task but will not receive any work to do")
+        .store_into(mNotWorker)
+        .default_value(false);
 
     argparse::ArgumentParser trackerArgs(TRACKER_SUBPARSER);
+    trackerArgs.add_argument(FLAG_TRACKER_PORT)
+        .help("The port of the RPC server on the tracker that clients will connect to")
+        .store_into(mPort)
+        .default_value(8080);
 
     program.add_subparser(clientArgs);
     program.add_subparser(trackerArgs);
@@ -80,6 +86,12 @@ auto Warpgate::parseArgs(const int argc, const char *argv[]) -> bool {
 
     mIsTrackerSelected = program.is_subcommand_used(TRACKER_SUBPARSER);
     mIsClientSelected = program.is_subcommand_used(CLIENT_SUBPARSER);
+
+    // additional conditions between flags
+    if (mTaskConfigPath.empty() && mNotWorker) {
+        lg::error("Client is neither a worker, nor is has submitted a task!");
+        return false;
+    }
 
     return true;
 }

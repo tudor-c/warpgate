@@ -24,7 +24,7 @@ public:
     };
 
 private:
-    std::unordered_map<Id, Client> mClients; // TODO lock behind RW guard
+    std::unordered_map<Id, Client> mClients;
     rpc::server mRpcServer;
     std::unordered_map<Id, Task> mTasks;
     // map from taskId to clientId
@@ -43,7 +43,7 @@ private:
 
     auto bindRpcServerFunctions() -> void;
 
-    auto registerWorker(const std::string &host, int port) -> Id;
+    auto registerWorker(const std::string &host, int port, bool isWorker) -> Id;
     auto unregisterWorker(Id id) -> void;
     auto registerTask(const Task&, Id acquirerId) -> void;
     auto printWorkers() const -> void;

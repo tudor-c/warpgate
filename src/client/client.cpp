@@ -12,11 +12,12 @@
 Client::Client(
     const std::string &trackerHost,
     const int trackerPort,
-    [[maybe_unused]] bool registerAsWorker, // TODO use
+    const bool notWorker,
     std::string  taskConfigPath,
     std::string  outputPath) :
         mTrackerHost(trackerHost),
         mTrackerPort(trackerPort),
+        mNotWorker(notWorker),
         mTaskConfigPath(std::move(taskConfigPath)),
         mOutputPath(std::move(outputPath)),
         mTrackerConnection(trackerHost, trackerPort),
@@ -79,7 +80,7 @@ auto Client::bindRcpServerFunctions() -> void {
 auto Client::registerAsClient() -> bool {
     mTrackerConnection.set_timeout(TIMEOUT_MS);
     try {
-        mOwnId = mTrackerConnection.call(RPC_REGISTER_CLIENT, LOCALHOST, getOwnPort()).as<Id>();
+        mOwnId = mTrackerConnection.call(RPC_REGISTER_CLIENT, LOCALHOST, getOwnPort(), !mNotWorker).as<Id>();
     } catch (std::exception&) {
         lg::error("Tracker unavailable at {}:{}!",
             mTrackerHost, mTrackerPort);
@@ -106,6 +107,9 @@ auto Client::unregisterAsClient() -> void {
 
 auto Client::readAndSubmitTask() -> bool {
     if (!mTaskConfigPath.empty()) {
+        if (mOutputPath.empty()) {
+            mOutputPath = TASK_OUTPUT_DEFAULT_PATH;
+        }
         try {
             mOwnTask = std::make_unique<Task>(mTaskConfigPath);
         }
@@ -264,7 +268,7 @@ auto Client::getFinishedTaskResults() -> void {
         mOwnTask->getName(), addr.toString());
 
     rpc::client peerConnection(addr.host, addr.port);
-    auto result = peerConnection.call(RPC_FETCH_SUBTASK_RESULT, rootId).as<ResultType>();
+    const auto result = peerConnection.call(RPC_FETCH_SUBTASK_RESULT, rootId).as<ResultType>();
     lg::info("Received task results!");
     mTaskCompleter = std::nullopt;
     this->writeOutputToFile(result);

@@ -30,6 +30,9 @@ constexpr auto FLAG_CLIENT_TRACKER_HOST = "--host";
 constexpr auto FLAG_CLIENT_TRACKER_PORT = "--port";
 constexpr auto FLAG_CLIENT_TASK_CONFIG_PATH = "--task";
 constexpr auto FLAG_CLIENT_OUTPUT_PATH = "--output";
+constexpr auto FLAG_CLIENT_NOT_WORKER = "--not-worker";
+
+constexpr auto FLAG_TRACKER_PORT = "--port";
 
 // JSON task config keys
 constexpr auto JSON_TASK_NAME = "name";
@@ -52,3 +55,5 @@ constexpr int ACTIVE_JOB_LIMIT = 1;
 
 // to use with std::format with taskId as field
 constexpr auto TEMP_LIB_FILENAME_TEMPLATE = "lib_task_{}";
+
+constexpr auto TASK_OUTPUT_DEFAULT_PATH = "output.data";

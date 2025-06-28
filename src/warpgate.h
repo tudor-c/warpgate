@@ -23,7 +23,10 @@ private:
     std::string mTrackerHost;
     int mTrackerPort = 0;
     std::string mTaskConfigPath;
-    std::string mTaskLibPath;
     std::string mOutputPath;
     bool mTrackerTestArg = false;
+    bool mNotWorker = false;
+
+    // tracker options
+    int mPort = 8080;
 };

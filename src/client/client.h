@@ -16,7 +16,7 @@ public:
     Client(
         const std::string& trackerHost,
         int trackerPort,
-        bool registerAsWorker,
+        bool notWorker,
         std::string  taskConfigPath,
         std::string  outputPath);
 
@@ -55,10 +55,11 @@ private:
 
     const std::string mTrackerHost;
     const int mTrackerPort;
+    const bool mNotWorker;
 
     const std::string mTaskConfigPath;
     std::string mTaskLibPath;
-    const std::string mOutputPath;
+    std::string mOutputPath;
 
     rpc::client mTrackerConnection;
     rpc::server mOwnServer;
@@ -72,8 +73,7 @@ private:
     std::queue<Subtask> mJobQueue;
     std::queue<Id> mFinishedJobs;
     // pairs of finished subtask id and its result
-    // TODO change result type from string to actual data
-    std::queue<std::pair<Id, std::string>> mJobResults;
+    std::queue<std::pair<Id, ResultType>> mJobResults;
     // results of completed subtasks, indexed by subtask id
     std::unordered_map<Id, std::string> mResults;
     // currently running threads, indexed by subtask id

@@ -1,0 +1,1 @@
+result_of_func1: func1(result_of_func2: func2(result_of_func4: func4: string1, result_of_func5: func5: string2), result_of_func3: func3(result_of_func6: func6: string3))

@@ -18,22 +18,21 @@ auto Tracker::run() -> int {
       util::scheduleTask(
           TRACKER_HEARTBEAT_CHECK_INTERVAL_MS,
           [this] { this->refreshClientList(); },
-          [this] { return false; } // TODO implement end condition
+          [this] { return false; }
       );
     });
     mSubtaskDispatchThread = std::thread([this] {
         util::scheduleTask(
             TRACKER_DISPATCH_SUBTASKS_INTERVAL_MS,
             [this] { this->updateJobQueue(); },
-            [this] { return false; } // TODO implement end condition
+            [this] { return false; }
         );
     });
     mRpcServer.run();
     return 0;
 }
 
-auto Tracker::registerWorker(const std::string &host, int port) -> Id {
-    // TODO check duplicates
+auto Tracker::registerWorker(const std::string &host, int port, const bool isWorker) -> Id {
     const auto id = this->generateUniqueId();
 
     mClients[id] = Client {
@@ -41,7 +40,7 @@ auto Tracker::registerWorker(const std::string &host, int port) -> Id {
         .socketAddress = SocketAddress {host, port},
         .rpcClient = std::make_unique<rpc::client>(host, port),
         .lastHeartbeat = std::chrono::system_clock::now(),
-        .isWorker = true, // TODO add condition
+        .isWorker = isWorker,
         .isFree = true};
 
     printWorkers();
@@ -185,8 +184,8 @@ auto Tracker::getSubtaskAcquirerSocketAddress(const Id subtaskId) const -> Socke
 }
 
 auto Tracker::bindRpcServerFunctions() -> void {
-    mRpcServer.bind(RPC_REGISTER_CLIENT, [this](const std::string& host, const int port) {
-        return this->registerWorker(host, port);
+    mRpcServer.bind(RPC_REGISTER_CLIENT, [this](const std::string& host, const int port, bool isWorker) {
+        return this->registerWorker(host, port, isWorker);
     });
     mRpcServer.bind(RPC_UNREGISTER_CLIENT, [this](const Id clientId) {
         this->unregisterWorker(clientId);
