@@ -24,5 +24,6 @@ private:
     int mTrackerPort = 0;
     std::string mTaskConfigPath;
     std::string mTaskLibPath;
+    std::string mOutputPath;
     bool mTrackerTestArg = false;
 };

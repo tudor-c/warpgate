@@ -17,8 +17,8 @@ public:
         const std::string& trackerHost,
         int trackerPort,
         bool registerAsWorker,
-        const std::string& taskConfigPath,
-        const std::string& taskLibPath);
+        std::string  taskConfigPath,
+        std::string  outputPath);
 
     ~Client() = default;
 
@@ -39,12 +39,15 @@ private:
     auto launchJobsFromQueue() -> void;
     auto fetchSubtaskResultsFromPeer(Id subtaskId) -> ResultType;
     auto fetchSubtaskParameterData(const Subtask&) -> std::vector<ResultType>;
+    auto fetchSubtaskInputData(const Subtask& subtask) -> ResultType;
     auto fetchTaskLibContent(Id taskId) -> std::vector<unsigned char>;
     auto sendFinishedJobsNotifications() -> void;
     auto extractFinishedJobResult(Id subtaskId) -> ResultType;
     auto fetchAndLoadTaskLibContent(const Subtask&) -> void;
     auto processFinishedTask(Id rootId, const SocketAddress& taskCompleter) -> void;
     auto getFinishedTaskResults() -> void;
+    auto writeOutputToFile(const ResultType& data) const -> void;
+    auto readInputDataFromFiles() -> void;
 
     auto teardown() -> void;
 
@@ -54,7 +57,8 @@ private:
     const int mTrackerPort;
 
     const std::string mTaskConfigPath;
-    const std::string mTaskLibPath;
+    std::string mTaskLibPath;
+    const std::string mOutputPath;
 
     rpc::client mTrackerConnection;
     rpc::server mOwnServer;
@@ -80,4 +84,6 @@ private:
     std::unordered_map<Id, DynamicLibrary> mOtherTaskLibs;
     // pair of root subtask Id of own task and completer address
     std::optional<std::pair<Id, SocketAddress>> mTaskCompleter;
+    // index -> input data from file
+    std::unordered_map<int, ResultType> mInputData;
 };

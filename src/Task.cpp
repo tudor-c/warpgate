@@ -26,22 +26,28 @@ Task::Task(const std::string& path) {
         });
     };
 
-    if (anyMissing(config, {JSON_TASK_NAME, JSON_TASK_ROOT, JSON_SUBTASKS})) {
-        throw std::runtime_error("Missing config name or subtasks section!\n");
+    if (anyMissing(config, {JSON_TASK_NAME, JSON_TASK_ROOT,JSON_TASK_LIB_PATH, JSON_SUBTASKS})) {
+        throw std::runtime_error("Missing config name, lib path or subtasks section!\n");
     }
     mName = config.at(JSON_TASK_NAME);
     mRootIndex = config.at(JSON_TASK_ROOT);
+    mLibPath = config.at(JSON_TASK_LIB_PATH);
 
     for (auto entry : config.at(JSON_SUBTASKS)) {
-        if (anyMissing(entry, {JSON_TASK_INDEX, JSON_TASK_FUNCTION, JSON_TASK_DEPENDS_ON})) {
+        if (anyMissing(entry, {JSON_SUBTASK_INDEX, JSON_SUBTASK_FUNCTION, JSON_SUBTASK_DEPENDS_ON})) {
             throw std::runtime_error("Missing subtask fields!\n");
         }
-        auto& index = entry.at(JSON_TASK_INDEX);
-        auto& functionName = entry.at(JSON_TASK_FUNCTION);
-        auto& dependsOn = entry.at(JSON_TASK_DEPENDS_ON);
+        auto& index = entry.at(JSON_SUBTASK_INDEX);
+        auto& functionName = entry.at(JSON_SUBTASK_FUNCTION);
+        auto& dependsOn = entry.at(JSON_SUBTASK_DEPENDS_ON);
+        auto inputPath = std::string{};
+        if (entry.contains(JSON_SUBTASK_INPUT_PATH)) {
+            inputPath = entry.at(JSON_SUBTASK_INPUT_PATH);
+        }
         mSubtasks.emplace(index, Subtask {
             .index = index,
             .functionName = functionName,
+            .inputDataPath = inputPath,
             .dependencyIndices = dependsOn,
             .dependencyIds = {},
             .status = Subtask::AVAILABLE});
@@ -64,6 +70,14 @@ auto Task::printStructure() const -> void {
 
 auto Task::getName() const -> std::string {
     return mName;
+}
+
+auto Task::getSubtasks() const -> std::unordered_map<Id, Subtask> {
+    return mSubtasks;
+}
+
+auto Task::getLibPath() const -> std::string {
+    return mLibPath;
 }
 
 auto Task::getAvailableSubtasks() -> std::vector<std::reference_wrapper<Subtask>> {

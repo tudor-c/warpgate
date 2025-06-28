@@ -1,22 +1,24 @@
 #include <format>
 #include <fstream>
+#include <utility>
 
 #include "client.h"
 
 #include "consts.h"
 #include "log.h"
-#include "../Task.h"
+#include "utils.h"
+#include "Task.h"
 
 Client::Client(
     const std::string &trackerHost,
     const int trackerPort,
     [[maybe_unused]] bool registerAsWorker, // TODO use
-    const std::string& taskConfigPath,
-    const std::string& taskLibPath) :
+    std::string  taskConfigPath,
+    std::string  outputPath) :
         mTrackerHost(trackerHost),
         mTrackerPort(trackerPort),
-        mTaskConfigPath(taskConfigPath),
-        mTaskLibPath(taskLibPath),
+        mTaskConfigPath(std::move(taskConfigPath)),
+        mOutputPath(std::move(outputPath)),
         mTrackerConnection(trackerHost, trackerPort),
         mOwnServer(FREE_PORT) {
 
@@ -69,6 +71,9 @@ auto Client::bindRcpServerFunctions() -> void {
     mOwnServer.bind(RPC_ANNOUNCE_TASK_COMPLETED, [this](const Id rootId, const SocketAddress& completer) {
         this->processFinishedTask(rootId, completer);
     });
+    mOwnServer.bind(RPC_FETCH_SUBTASK_INPUT_DATA, [this](const int subtaskIndex) {
+        return mInputData.at(subtaskIndex);
+    });
 }
 
 auto Client::registerAsClient() -> bool {
@@ -100,14 +105,17 @@ auto Client::unregisterAsClient() -> void {
 }
 
 auto Client::readAndSubmitTask() -> bool {
-    if (!mTaskConfigPath.empty() && !mTaskLibPath.empty()) {
+    if (!mTaskConfigPath.empty()) {
         try {
             mOwnTask = std::make_unique<Task>(mTaskConfigPath);
         }
         catch (std::runtime_error& e) {
             lg::error(e.what());
+            std::exit(1);
         }
 
+        this->readInputDataFromFiles();
+        mTaskLibPath = mOwnTask.get()->getLibPath();
         mOwnLibContent = util::readBinaryFile(mTaskLibPath);
         if (mOwnTask && !mOwnLibContent.empty()) {
             submitTaskToTracker(*mOwnTask);
@@ -117,24 +125,20 @@ auto Client::readAndSubmitTask() -> bool {
             return false;
         }
     }
-    else if (!mTaskConfigPath.empty() || !mTaskLibPath.empty()) {
-        lg::error("Both `{}` and `{}` are needed to work together!",
-            FLAG_CLIENT_TASK_CONFIG_PATH, FLAG_CLIENT_TASK_LIB_PATH);
-        return false;
-    }
     return true;
 }
 
 auto Client::submitTaskToTracker(const Task &task) -> void {
+    lg::info("Submitting task {} to tracker..", task.getName());
     mTrackerConnection.call(RPC_SUBMIT_TASK_TO_TRACKER, task, mOwnId);
 }
 
 auto Client::receiveJob(const Subtask& subtask) -> bool  {
     if (isBusy()) {
-        lg::debug("Denied subtask: id={}, fn={}!", subtask.id, subtask.functionName);
+        lg::error("Denied subtask: id={}, fn={}!", subtask.id, subtask.functionName);
         return false;
     }
-    lg::debug("Accepted subtask: id={}, fn={}.", subtask.id, subtask.functionName);
+    lg::info("Accepted subtask: id={}, fn={}.", subtask.id, subtask.functionName);
     mJobQueue.push(subtask);
     return true;
 }
@@ -159,7 +163,7 @@ auto Client::launchJobsFromQueue() -> void {
             const auto func = mOtherTaskLibs.at(subtask.taskId).loadFunction(
                 subtask.functionName);
             auto result = func(previousResults);
-            lg::debug("Finished subtask {}!", subtask.functionName);
+            lg::info("Finished subtask {}!", subtask.functionName);
 
             // job done 🧌
             mFinishedJobs.push(subtask.id);
@@ -178,12 +182,25 @@ auto Client::fetchSubtaskResultsFromPeer(const Id subtaskId) -> ResultType {
 }
 
 auto Client::fetchSubtaskParameterData(const Subtask& subtask) -> std::vector<ResultType> {
-    return subtask.dependencyIds
-        | std::views::transform(
-            [this](const Id& dependencyId) {
-                return fetchSubtaskResultsFromPeer(dependencyId);
-        })
-        | std::ranges::to<std::vector>();
+    if (subtask.dependencyIds.size() > 0) {
+        return subtask.dependencyIds
+            | std::views::transform(
+                [this](const Id& dependencyId) {
+                    return fetchSubtaskResultsFromPeer(dependencyId);
+            })
+            | std::ranges::to<std::vector>();
+    }
+    if (subtask.inputDataPath.empty()) {
+        return {};
+    }
+    return {fetchSubtaskInputData(subtask)};
+}
+
+auto Client::fetchSubtaskInputData(const Subtask& subtask) -> ResultType {
+    const auto [host, port] = mTrackerConnection.call(RPC_FETCH_SUBTASK_ACQUIRER_ADDRESS, subtask.id)
+        .as<SocketAddress>();
+    rpc::client peerConnection(host, port);
+    return peerConnection.call(RPC_FETCH_SUBTASK_INPUT_DATA, subtask.index).as<ResultType>();
 }
 
 auto Client::fetchTaskLibContent(const Id taskId) -> std::vector<unsigned char> {
@@ -225,7 +242,7 @@ auto Client::fetchAndLoadTaskLibContent(const Subtask& subtask) -> void {
     close(fd);
     std::ofstream dynLibFile(tempTemplate, std::ios::binary);
 
-    dynLibFile.write(reinterpret_cast<const char*>(libContent.data()), libContent.size());
+    dynLibFile.write(reinterpret_cast<const char*>(libContent.data()), static_cast<long>(libContent.size()));
     dynLibFile.close();
 
     mOtherTaskLibs.insert({taskId, DynamicLibrary(tempTemplate)});
@@ -248,9 +265,29 @@ auto Client::getFinishedTaskResults() -> void {
 
     rpc::client peerConnection(addr.host, addr.port);
     auto result = peerConnection.call(RPC_FETCH_SUBTASK_RESULT, rootId).as<ResultType>();
-    lg::info("Received task results: {}", result);
-
+    lg::info("Received task results!");
     mTaskCompleter = std::nullopt;
+    this->writeOutputToFile(result);
+}
+
+auto Client::writeOutputToFile(const ResultType& data) const -> void {
+    std::ofstream outFile;
+    outFile.open(mOutputPath);
+    if (!outFile.is_open()) {
+        throw std::runtime_error(std::format(
+            "Could not create output file at {}", mOutputPath));
+    }
+    outFile << data;
+    lg::debug("Saved output to {}", mOutputPath);
+}
+
+auto Client::readInputDataFromFiles() -> void {
+    for (const auto& subtask : mOwnTask->getSubtasks() | std::views::values) {
+        if (subtask.inputDataPath.empty()) {
+            continue;
+        }
+        mInputData.insert({subtask.index, util::readTextFile(subtask.inputDataPath)});
+    }
 }
 
 auto Client::getOwnPort() const -> int {

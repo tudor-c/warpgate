@@ -29,7 +29,7 @@ auto Warpgate::run() -> int {
                 mTrackerPort,
                 registerAsWorker,
                 mTaskConfigPath,
-                mTaskLibPath);
+                mOutputPath);
             return client.run();
         }
         catch (const std::runtime_error& err) {
@@ -60,10 +60,10 @@ auto Warpgate::parseArgs(const int argc, const char *argv[]) -> bool {
         .help("Path to task file")
         .store_into(mTaskConfigPath)
         .default_value("");
-    clientArgs.add_argument(FLAG_CLIENT_TASK_LIB_PATH)
-        .help("Path to the dynamic library containing subtask functions")
-        .store_into(mTaskLibPath)
-        .default_value("");
+    clientArgs.add_argument(FLAG_CLIENT_OUTPUT_PATH)
+        .help("Path where the output of the submitted task will be saved")
+        .store_into(mOutputPath)
+        .default_value("output.data");
 
     argparse::ArgumentParser trackerArgs(TRACKER_SUBPARSER);
 

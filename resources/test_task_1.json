@@ -1,5 +1,6 @@
 {
   "name": "test task 1",
+  "lib": "output/libtasklib.so",
   "root": 1,
   "subtasks": [
     {
@@ -20,17 +21,20 @@
     {
       "index": 4,
       "function": "func4",
-      "depends_on": []
+      "depends_on": [],
+      "input_path": "resources/data1.txt"
     },
     {
       "index": 5,
       "function": "func5",
-      "depends_on": []
+      "depends_on": [],
+      "input_path": "resources/data2.txt"
     },
     {
       "index": 6,
       "function": "func6",
-      "depends_on": []
+      "depends_on": [],
+      "input_path": "resources/data3.txt"
     }
   ]
 }

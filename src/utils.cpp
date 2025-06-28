@@ -13,6 +13,12 @@ namespace util {
         return buffer;
     }
 
+    auto readTextFile(const std::string &path) -> std::string {
+        std::ifstream file(path);
+        return std::string((std::istreambuf_iterator(file)),
+            std::istreambuf_iterator<char>());
+    }
+
     auto scheduleTask(const int intervalMs,
                       const std::function<void()>& fn, const std::function<bool()>& shouldEnd) -> void {
         while (!shouldEnd()) {

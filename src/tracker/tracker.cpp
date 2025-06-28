@@ -5,6 +5,7 @@
 #include "consts.h"
 #include "Task.h"
 #include "log.h"
+#include "utils.h"
 
 Tracker::Tracker() : mRpcServer(TRACKER_PORT) {
     lg::info("Starting tracker at {}:{} 🚀",
@@ -74,6 +75,7 @@ auto Tracker::registerTask(const Task& task, const Id acquirerId) -> void {
         subtask.get().taskId = taskId;
         indexToId.insert({subtask.get().index, id});
         mAllSubtasks.insert({id, std::ref(subtask)});
+        mSubtaskAcquirer.insert({id, acquirerId});
     }
 
     // replace dependsOn index values with newly assigned unique IDs
@@ -143,7 +145,7 @@ auto Tracker::markSubtaskCompleted(const Id workerId, const Id subtaskId) -> voi
     auto& subtask = mAllSubtasks.at(subtaskId).get();
     subtask.completedBy = workerId;
     subtask.status = Subtask::COMPLETED;
-    lg::debug("Subtask {} completed by {}.", mAllSubtasks.at(subtaskId).get().functionName,
+    lg::info("Subtask {} completed by {}.", mAllSubtasks.at(subtaskId).get().functionName,
         subtask.completedBy);
 }
 
@@ -174,8 +176,12 @@ auto Tracker::getJobCompleterSocketAddress(const Id subtaskId) const -> SocketAd
 
 auto Tracker::getTaskAcquirerSockerAddress(const Id taskId) const -> SocketAddress {
     const auto clientId = mTaskAcquirers.at(taskId);
-    auto res = mClients.at(clientId).socketAddress;
-    return res;
+    return mClients.at(clientId).socketAddress;
+}
+
+auto Tracker::getSubtaskAcquirerSocketAddress(const Id subtaskId) const -> SocketAddress {
+    const auto clientId = mSubtaskAcquirer.at(subtaskId);
+    return mClients.at(clientId).socketAddress;
 }
 
 auto Tracker::bindRpcServerFunctions() -> void {
@@ -201,6 +207,9 @@ auto Tracker::bindRpcServerFunctions() -> void {
     });
     mRpcServer.bind(RPC_FETCH_TASK_ACQUIRER_ADDRESS, [this](const Id taskId) {
         return this->getTaskAcquirerSockerAddress(taskId);
+    });
+    mRpcServer.bind(RPC_FETCH_SUBTASK_ACQUIRER_ADDRESS, [this] (const Id subtaskId) {
+        return this->getSubtaskAcquirerSocketAddress(subtaskId);
     });
 }
 

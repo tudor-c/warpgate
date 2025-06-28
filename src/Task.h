@@ -7,7 +7,6 @@
 #include <rpc/msgpack.hpp>
 
 #include "types.h"
-#include "utils.h"
 
 
 struct Subtask {
@@ -23,6 +22,8 @@ struct Subtask {
     Id completedBy = -1;
     // function name of subtask's entry point
     std::string functionName;
+    // input data file is subtask is terminal node
+    std::string inputDataPath;
     // indexes of dependency subtasks
     std::vector<int> dependencyIndices;
     // unique ids of dependency subtasks, assigned after subtask is registered by tracker
@@ -30,7 +31,8 @@ struct Subtask {
     // status of the subtask, maintained by the tracker
     Status status = AVAILABLE;
 
-    MSGPACK_DEFINE(index, id, taskId, completedBy, functionName, dependencyIndices, dependencyIds, status)
+    MSGPACK_DEFINE(index, id, taskId, completedBy, functionName,
+        inputDataPath, dependencyIndices, dependencyIds, status)
 };
 
 MSGPACK_ADD_ENUM(Subtask::Status);
@@ -44,16 +46,19 @@ public:
 
     auto printStructure() const -> void;
     auto getName() const -> std::string;
+    auto getSubtasks() const -> std::unordered_map<Id, Subtask>;
+    auto getLibPath() const -> std::string;
     auto getAvailableSubtasks() -> std::vector<std::reference_wrapper<Subtask>>;
     auto getAllSubtasks() -> std::vector<std::reference_wrapper<Subtask>>;
     auto isCompleted() -> bool;
     auto isSubtaskAvailable(const Subtask&) const -> bool;
     auto getRootSubtask() -> std::reference_wrapper<Subtask>;
 
-    MSGPACK_DEFINE(mName, mRootIndex, mSubtasks)
+    MSGPACK_DEFINE(mName, mLibPath, mRootIndex, mSubtasks)
 
 private:
     std::string mName;
+    std::string mLibPath;
     int mRootIndex = 0;
     std::unordered_map<Id, Subtask> mSubtasks;
 };

@@ -9,6 +9,8 @@ constexpr auto RPC_HEARTBEAT = "heartbeat";
 constexpr auto RPC_ANNOUNCE_SUBTASK_COMPLETED = "markSubtaskCompleted";
 constexpr auto RPC_FETCH_JOB_COMPLETER_ADDRESS = "jobCompleterAddress";
 constexpr auto RPC_FETCH_TASK_ACQUIRER_ADDRESS = "taskAcquirerAddress";
+constexpr auto RPC_FETCH_SUBTASK_ACQUIRER_ADDRESS = "subtaskAcquirerAddress";
+constexpr auto RPC_FETCH_SUBTASK_INPUT_DATA = "subtaskInputData";
 
 // RPC Client function names
 constexpr auto RPC_DISPATCH_JOB = "dispatchJob";
@@ -27,15 +29,17 @@ constexpr auto TIMEOUT_MS = 3000;
 constexpr auto FLAG_CLIENT_TRACKER_HOST = "--host";
 constexpr auto FLAG_CLIENT_TRACKER_PORT = "--port";
 constexpr auto FLAG_CLIENT_TASK_CONFIG_PATH = "--task";
-constexpr auto FLAG_CLIENT_TASK_LIB_PATH = "--lib";
+constexpr auto FLAG_CLIENT_OUTPUT_PATH = "--output";
 
 // JSON task config keys
 constexpr auto JSON_TASK_NAME = "name";
-constexpr auto JSON_SUBTASKS = "subtasks";
-constexpr auto JSON_TASK_INDEX = "index";
+constexpr auto JSON_TASK_LIB_PATH = "lib";
 constexpr auto JSON_TASK_ROOT = "root";
-constexpr auto JSON_TASK_FUNCTION = "function";
-constexpr auto JSON_TASK_DEPENDS_ON = "depends_on";
+constexpr auto JSON_SUBTASKS = "subtasks";
+constexpr auto JSON_SUBTASK_INDEX = "index";
+constexpr auto JSON_SUBTASK_FUNCTION = "function";
+constexpr auto JSON_SUBTASK_INPUT_PATH = "input_path";
+constexpr auto JSON_SUBTASK_DEPENDS_ON = "depends_on";
 
 constexpr int CLIENT_HEARTBEAT_PERIOD_MS = 500;
 constexpr int CLIENT_HEARTBEAT_MAX_INTERVAL_MS = 1000;

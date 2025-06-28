@@ -27,8 +27,11 @@ private:
     std::unordered_map<Id, Client> mClients; // TODO lock behind RW guard
     rpc::server mRpcServer;
     std::unordered_map<Id, Task> mTasks;
-    // map fron taskId to clientId;
+    // map from taskId to clientId
     std::unordered_map<Id, Id> mTaskAcquirers;
+    // like task acquirers map but for each subtask
+    // from subtaskId to clientId
+    std::unordered_map<Id, Id> mSubtaskAcquirer;
 
     // all subtasks from all tasks
     std::unordered_map<Id, std::reference_wrapper<Subtask>> mAllSubtasks;
@@ -53,6 +56,7 @@ private:
 
     auto getJobCompleterSocketAddress(Id subtaskId) const -> SocketAddress;
     auto getTaskAcquirerSockerAddress(Id taskId) const -> SocketAddress;
+    auto getSubtaskAcquirerSocketAddress(Id subtaskId) const -> SocketAddress;
 
     auto refreshClientList() -> void;
     auto refreshClientHeartbeat(Id clientId) -> void;
