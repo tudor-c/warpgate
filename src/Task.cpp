@@ -62,6 +62,10 @@ auto Task::printStructure() const -> void {
     lg::debug("Task: {}, root: {}, subtasks:\n{}", mName, mRootIndex, subtaskInfo);
 }
 
+auto Task::getName() const -> std::string {
+    return mName;
+}
+
 auto Task::getAvailableSubtasks() -> std::vector<std::reference_wrapper<Subtask>> {
     return mSubtasks
         | std::views::values
@@ -77,8 +81,8 @@ auto Task::getAllSubtasks() -> std::vector<std::reference_wrapper<Subtask>> {
         | std::ranges::to<std::vector<std::reference_wrapper<Subtask>>>();
 }
 
-auto Task::isCompleted() const -> bool {
-    return mSubtasks.at(mRootIndex).status;
+auto Task::isCompleted() -> bool {
+    return this->getRootSubtask().get().status == Subtask::COMPLETED;
 }
 
 auto Task::isSubtaskAvailable(const Subtask& subtask) const -> bool {

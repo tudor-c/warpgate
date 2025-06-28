@@ -43,7 +43,8 @@ private:
     auto sendFinishedJobsNotifications() -> void;
     auto extractFinishedJobResult(Id subtaskId) -> ResultType;
     auto fetchAndLoadTaskLibContent(const Subtask&) -> void;
-    auto processFinishedTask(const SocketAddress& taskCompleter) -> void;
+    auto processFinishedTask(Id rootId, const SocketAddress& taskCompleter) -> void;
+    auto getFinishedTaskResults() -> void;
 
     auto teardown() -> void;
 
@@ -77,4 +78,6 @@ private:
     std::vector<unsigned char> mOwnLibContent;
     // other peers' libraries identified by task id
     std::unordered_map<Id, DynamicLibrary> mOtherTaskLibs;
+    // pair of root subtask Id of own task and completer address
+    std::optional<std::pair<Id, SocketAddress>> mTaskCompleter;
 };

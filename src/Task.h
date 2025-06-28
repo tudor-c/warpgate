@@ -43,9 +43,10 @@ public:
     explicit Task(const std::string& path);
 
     auto printStructure() const -> void;
+    auto getName() const -> std::string;
     auto getAvailableSubtasks() -> std::vector<std::reference_wrapper<Subtask>>;
     auto getAllSubtasks() -> std::vector<std::reference_wrapper<Subtask>>;
-    auto isCompleted() const -> bool;
+    auto isCompleted() -> bool;
     auto isSubtaskAvailable(const Subtask&) const -> bool;
     auto getRootSubtask() -> std::reference_wrapper<Subtask>;
 

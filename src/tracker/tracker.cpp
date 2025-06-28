@@ -139,12 +139,12 @@ auto Tracker::dispatchJobsFromQueue() -> void {
 }
 
 auto Tracker::markSubtaskCompleted(const Id workerId, const Id subtaskId) -> void {
-    lg::debug("Subtask {} completed by {}.", mAllSubtasks.at(subtaskId).get().functionName,
-        workerId);
     mClients.at(workerId).isFree = true;
     auto& subtask = mAllSubtasks.at(subtaskId).get();
-    subtask.status = Subtask::COMPLETED;
     subtask.completedBy = workerId;
+    subtask.status = Subtask::COMPLETED;
+    lg::debug("Subtask {} completed by {}.", mAllSubtasks.at(subtaskId).get().functionName,
+        subtask.completedBy);
 }
 
 auto Tracker::announceFinishedTasks() -> void {
@@ -157,14 +157,13 @@ auto Tracker::announceFinishedTasks() -> void {
         }
         const auto& rootSubtask = task.getRootSubtask();
         const auto& acquirerId = mTaskAcquirers.at(taskId);
-        lg::debug("Announcing finished task.. {}", rootSubtask.get().completedBy);
+        lg::debug("Announcing finished task {} by {}",
+            rootSubtask.get().functionName, rootSubtask.get().completedBy);
         const auto& completerAddress = mClients.at(rootSubtask.get().completedBy)
             .socketAddress;
-        lg::debug("Announcing finished task..");
         mClients.at(acquirerId).rpcClient->call(
-            RPC_ANNOUNCE_TASK_COMPLETED, completerAddress);
-        // mTasks.erase(it++);
-        it++;
+            RPC_ANNOUNCE_TASK_COMPLETED, rootSubtask.get().id, completerAddress);
+        mTasks.erase(it++);
     }
 }
 

@@ -11,7 +11,7 @@ Client::Client(
     const std::string &trackerHost,
     const int trackerPort,
     [[maybe_unused]] bool registerAsWorker, // TODO use
-    const std::string &taskConfigPath,
+    const std::string& taskConfigPath,
     const std::string& taskLibPath) :
         mTrackerHost(trackerHost),
         mTrackerPort(trackerPort),
@@ -34,7 +34,9 @@ auto Client::run() -> int {
         return 1;
     }
 
-    mServerThread = std::thread(&rpc::server::run, &mOwnServer);
+    mServerThread = std::thread([this] {
+        this->mOwnServer.run();
+    });
     mHeartbeatThread = std::thread([this] {
         util::scheduleTask(
             CLIENT_HEARTBEAT_PERIOD_MS,
@@ -64,8 +66,8 @@ auto Client::bindRcpServerFunctions() -> void {
     mOwnServer.bind(RPC_FETCH_LIB_CONTENT, [this] {
         return mOwnLibContent;
     });
-    mOwnServer.bind(RPC_ANNOUNCE_TASK_COMPLETED, [this](const SocketAddress& completer) {
-        this->processFinishedTask(completer);
+    mOwnServer.bind(RPC_ANNOUNCE_TASK_COMPLETED, [this](const Id rootId, const SocketAddress& completer) {
+        this->processFinishedTask(rootId, completer);
     });
 }
 
@@ -140,6 +142,7 @@ auto Client::receiveJob(const Subtask& subtask) -> bool  {
 auto Client::processJobsQueues() -> void {
     this->launchJobsFromQueue();
     this->sendFinishedJobsNotifications();
+    this->getFinishedTaskResults();
 }
 
 auto Client::launchJobsFromQueue() -> void {
@@ -156,7 +159,7 @@ auto Client::launchJobsFromQueue() -> void {
             const auto func = mOtherTaskLibs.at(subtask.taskId).loadFunction(
                 subtask.functionName);
             auto result = func(previousResults);
-            lg::debug("Finished {}, with result: {}", subtask.functionName, result);
+            lg::debug("Finished subtask {}!", subtask.functionName);
 
             // job done 🧌
             mFinishedJobs.push(subtask.id);
@@ -204,6 +207,7 @@ auto Client::sendFinishedJobsNotifications() -> void {
 }
 
 auto Client::extractFinishedJobResult(const Id subtaskId) -> ResultType {
+    lg::debug("Fetching result for subtask {}..", subtaskId);
     const auto result = std::move(mResults.at(subtaskId));
     mResults.erase(subtaskId);
     return result;
@@ -230,11 +234,23 @@ auto Client::fetchAndLoadTaskLibContent(const Subtask& subtask) -> void {
     unlink(tempTemplate);
 }
 
-auto Client::processFinishedTask(const SocketAddress &taskCompleter) -> void {
-    rpc::client peerConnection(taskCompleter.host, taskCompleter.port);
-    auto result = peerConnection.call(RPC_FETCH_SUBTASK_RESULT, mOwnTask.get()->getRootSubtask().get().id)
-        .as<ResultType>();
+auto Client::processFinishedTask(Id rootId, const SocketAddress &taskCompleter) -> void {
+    mTaskCompleter = std::make_optional(std::make_pair(rootId, taskCompleter));
+}
+
+auto Client::getFinishedTaskResults() -> void {
+    if (!mTaskCompleter.has_value()) {
+        return;
+    }
+    const auto& [rootId, addr] = mTaskCompleter.value();
+    lg::info("Own task {} is completed, fetching results from {}..",
+        mOwnTask->getName(), addr.toString());
+
+    rpc::client peerConnection(addr.host, addr.port);
+    auto result = peerConnection.call(RPC_FETCH_SUBTASK_RESULT, rootId).as<ResultType>();
     lg::info("Received task results: {}", result);
+
+    mTaskCompleter = std::nullopt;
 }
 
 auto Client::getOwnPort() const -> int {
