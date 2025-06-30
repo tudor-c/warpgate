@@ -62,8 +62,8 @@ auto Task::printStructure() const -> void {
             subtaskInfo += "\n";
         }
         first = false;
-        subtaskInfo += std::format(" - index: {}, name: {}, dependsOn: {}",
-            subtask.index, subtask.functionName, subtask.dependencyIndices);
+        subtaskInfo += std::format(" - index: {}, ID: {}, name: {}, dependsOnIndex: {}",
+            subtask.index, subtask.id, subtask.functionName, subtask.dependencyIndices);
     }
     lg::debug("Task: {}, root: {}, subtasks:\n{}", mName, mRootIndex, subtaskInfo);
 }

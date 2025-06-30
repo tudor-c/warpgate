@@ -7,7 +7,7 @@
 DynamicLibrary::DynamicLibrary(const std::string &path) {
     mHandle = dlopen(path.c_str(), RTLD_LAZY);
     if (mHandle != nullptr) {
-        lg::debug("Successfully loaded {}", path);
+        lg::debug("Successfully loaded SO, stored at {}", path);
     }
     else {
         const char* error = dlerror();

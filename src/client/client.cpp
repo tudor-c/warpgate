@@ -82,13 +82,13 @@ auto Client::registerAsClient() -> bool {
     try {
         mOwnId = mTrackerConnection.call(RPC_REGISTER_CLIENT, LOCALHOST, getOwnPort(), !mNotWorker).as<Id>();
     } catch (std::exception&) {
-        lg::error("Tracker unavailable at {}:{}!",
+        lg::error("Tracker unavailable at {}:{}",
             mTrackerHost, mTrackerPort);
         return false;
     }
     mTrackerConnection.clear_timeout();
 
-    lg::info("Registered as worker for tracker at {}:{}, own ID is {}.",
+    lg::info("Registered as worker for tracker at {}:{}, own ID is {}",
         mTrackerHost, mTrackerPort, mOwnId);
 
     return true;
@@ -100,7 +100,7 @@ auto Client::teardown() -> void {
 }
 
 auto Client::unregisterAsClient() -> void {
-    lg::info("Unregistered as worker for tracker at {}:{}.",
+    lg::info("Unregistered as worker for tracker at {}:{}",
         mTrackerHost, mTrackerPort);
     mTrackerConnection.call(RPC_UNREGISTER_CLIENT, mOwnId);
 }
@@ -125,7 +125,7 @@ auto Client::readAndSubmitTask() -> bool {
             submitTaskToTracker(*mOwnTask);
         }
         else {
-            lg::error("Could not read task config or lib files!");
+            lg::error("Could not read task config or lib files");
             return false;
         }
     }
@@ -133,16 +133,16 @@ auto Client::readAndSubmitTask() -> bool {
 }
 
 auto Client::submitTaskToTracker(const Task &task) -> void {
-    lg::info("Submitting task {} to tracker..", task.getName());
+    lg::info("Submitting task {} to tracker", task.getName());
     mTrackerConnection.call(RPC_SUBMIT_TASK_TO_TRACKER, task, mOwnId);
 }
 
 auto Client::receiveJob(const Subtask& subtask) -> bool  {
     if (isBusy()) {
-        lg::error("Denied subtask: id={}, fn={}!", subtask.id, subtask.functionName);
+        lg::error("Denied subtask: id={}, fn={}", subtask.id, subtask.functionName);
         return false;
     }
-    lg::info("Accepted subtask: id={}, fn={}.", subtask.id, subtask.functionName);
+    lg::info("Accepted subtask \"{}\"", subtask.functionName);
     mJobQueue.push(subtask);
     return true;
 }
@@ -167,12 +167,11 @@ auto Client::launchJobsFromQueue() -> void {
             const auto func = mOtherTaskLibs.at(subtask.taskId).loadFunction(
                 subtask.functionName);
             auto result = func(previousResults);
-            lg::info("Finished subtask {}!", subtask.functionName);
+            lg::info("🏁 Finished subtask \"{}\"", subtask.functionName);
 
             // job done 🧌
             mFinishedJobs.push(subtask.id);
-            mResults.insert({subtask.id, std::format("result_of_{}: {}", subtask.functionName,
-                result)});
+            mResults.insert({subtask.id, result});
         })});
     }
 }
@@ -208,7 +207,7 @@ auto Client::fetchSubtaskInputData(const Subtask& subtask) -> ResultType {
 }
 
 auto Client::fetchTaskLibContent(const Id taskId) -> std::vector<unsigned char> {
-    lg::debug("Fetching lib for taskId {}", taskId);
+    lg::debug("Fetching dynamic library for task with ID={}", taskId);
     const auto [host, port] = mTrackerConnection.call(RPC_FETCH_TASK_ACQUIRER_ADDRESS,
         taskId).as<SocketAddress>();
     rpc::client acquirer(host, port);
@@ -222,13 +221,11 @@ auto Client::sendFinishedJobsNotifications() -> void {
 
         mWorkerThreads.at(jobId).join();
         mWorkerThreads.erase(jobId);
-        lg::debug("Announcing finished job: {}...", jobId);
         mTrackerConnection.call(RPC_ANNOUNCE_SUBTASK_COMPLETED, mOwnId, jobId);
     }
 }
 
 auto Client::extractFinishedJobResult(const Id subtaskId) -> ResultType {
-    lg::debug("Fetching result for subtask {}..", subtaskId);
     const auto result = std::move(mResults.at(subtaskId));
     mResults.erase(subtaskId);
     return result;
@@ -250,7 +247,6 @@ auto Client::fetchAndLoadTaskLibContent(const Subtask& subtask) -> void {
     dynLibFile.close();
 
     mOtherTaskLibs.insert({taskId, DynamicLibrary(tempTemplate)});
-    lg::debug("Loaded lib for {}, size is: {}B", subtask.functionName, libContent.size());
 
     unlink(tempTemplate);
 }
@@ -264,12 +260,12 @@ auto Client::getFinishedTaskResults() -> void {
         return;
     }
     const auto& [rootId, addr] = mTaskCompleter.value();
-    lg::info("Own task {} is completed, fetching results from {}..",
+    lg::info("Own task {} is completed, fetching results from {}",
         mOwnTask->getName(), addr.toString());
 
     rpc::client peerConnection(addr.host, addr.port);
     const auto result = peerConnection.call(RPC_FETCH_SUBTASK_RESULT, rootId).as<ResultType>();
-    lg::info("Received task results!");
+    lg::debug("Received task results");
     mTaskCompleter = std::nullopt;
     this->writeOutputToFile(result);
 }
@@ -282,7 +278,7 @@ auto Client::writeOutputToFile(const ResultType& data) const -> void {
             "Could not create output file at {}", mOutputPath));
     }
     outFile << data;
-    lg::debug("Saved output to {}", mOutputPath);
+    lg::info("📂 Saved output to {}", mOutputPath);
 }
 
 auto Client::readInputDataFromFiles() -> void {

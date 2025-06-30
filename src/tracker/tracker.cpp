@@ -63,7 +63,7 @@ auto Tracker::registerTask(const Task& task, const Id acquirerId) -> void {
     const auto taskId = this->generateUniqueId();
     mTasks.insert({taskId, task});
     mTaskAcquirers.insert({taskId, acquirerId});
-    lg::debug("Assigned id {} to task.", taskId);
+    lg::debug("Assigned ID {} to newly submitted task.", taskId);
 
     std::unordered_map<int, Id> indexToId;
 
@@ -86,6 +86,8 @@ auto Tracker::registerTask(const Task& task, const Id acquirerId) -> void {
             })
             | std::ranges::to<std::vector<Id>>();
     }
+
+    mTasks.at(taskId).printStructure();
 }
 
 auto Tracker::updateJobQueue() -> void {
@@ -125,13 +127,13 @@ auto Tracker::dispatchJobsFromQueue() -> void {
             auto& worker = *nextWorker;
             accepted = worker.rpcClient->call(RPC_DISPATCH_JOB, subtask).as<bool>();
             if (accepted) {
-                lg::debug("Subtask {} accepted by worker {}.", subtask.functionName, worker.id);
+                lg::debug("Subtask \"{}\" accepted by worker with ID={}", subtask.functionName, worker.id);
                 subtask.status = Subtask::SUBMITTED;
                 worker.isFree = false;
                 mSubtaskQueue.pop();
             }
             else {
-                lg::debug("Subtask {} NOT accepted by worker {}!",
+                lg::debug("Subtask \"{}\" NOT accepted by worker {}",
                     subtask.functionName, worker.id);
             }
             ++nextWorker;
@@ -144,7 +146,7 @@ auto Tracker::markSubtaskCompleted(const Id workerId, const Id subtaskId) -> voi
     auto& subtask = mAllSubtasks.at(subtaskId).get();
     subtask.completedBy = workerId;
     subtask.status = Subtask::COMPLETED;
-    lg::info("Subtask {} completed by {}.", mAllSubtasks.at(subtaskId).get().functionName,
+    lg::info("🏁 Subtask \"{}\" completed by worker with ID={}", mAllSubtasks.at(subtaskId).get().functionName,
         subtask.completedBy);
 }
 
@@ -158,7 +160,7 @@ auto Tracker::announceFinishedTasks() -> void {
         }
         const auto& rootSubtask = task.getRootSubtask();
         const auto& acquirerId = mTaskAcquirers.at(taskId);
-        lg::debug("Announcing finished task {} by {}",
+        lg::info("Finished task {} by {}",
             rootSubtask.get().functionName, rootSubtask.get().completedBy);
         const auto& completerAddress = mClients.at(rootSubtask.get().completedBy)
             .socketAddress;
@@ -192,7 +194,6 @@ auto Tracker::bindRpcServerFunctions() -> void {
     });
     mRpcServer.bind(RPC_SUBMIT_TASK_TO_TRACKER, [this](const Task& task,
         const Id acquirerId) {
-        task.printStructure();
         this->registerTask(task, acquirerId);
     });
     mRpcServer.bind(RPC_HEARTBEAT, [this](const Id clientId) {
@@ -218,7 +219,7 @@ auto Tracker::refreshClientList() -> void {
         const auto timeSinceLastHeartbeat = std::chrono::duration_cast<std::chrono::milliseconds>(
             now - it->second.lastHeartbeat).count();
         if (timeSinceLastHeartbeat > CLIENT_HEARTBEAT_MAX_INTERVAL_MS) {
-            lg::info("Removed client {} after no heartbeat.", it->first);
+            lg::info("Removed client {} after no heartbeat", it->first);
             mClients.erase(it++);
         } else {
             ++it;
