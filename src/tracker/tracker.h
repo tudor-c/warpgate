@@ -36,6 +36,8 @@ private:
     // all subtasks from all tasks
     std::unordered_map<Id, std::reference_wrapper<Subtask>> mAllSubtasks;
     std::queue<std::reference_wrapper<Subtask>> mSubtaskQueue;
+    // map from worker id to subtask id
+    std::unordered_map<Id, std::vector<Id>> mSubtasksByWorker;
     std::thread mHeartbeatCheckThread;
     std::thread mSubtaskDispatchThread;
 

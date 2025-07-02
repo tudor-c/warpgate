@@ -128,6 +128,7 @@ auto Tracker::dispatchJobsFromQueue() -> void {
             accepted = worker.rpcClient->call(RPC_DISPATCH_JOB, subtask).as<bool>();
             if (accepted) {
                 lg::debug("Subtask \"{}\" accepted by worker with ID={}", subtask.functionName, worker.id);
+                mSubtasksByWorker[worker.id].push_back(subtask.id);
                 subtask.status = Subtask::SUBMITTED;
                 worker.isFree = false;
                 mSubtaskQueue.pop();
@@ -220,6 +221,12 @@ auto Tracker::refreshClientList() -> void {
             now - it->second.lastHeartbeat).count();
         if (timeSinceLastHeartbeat > CLIENT_HEARTBEAT_MAX_INTERVAL_MS) {
             lg::info("Removed client {} after no heartbeat", it->first);
+            for (auto subtaskId : mSubtasksByWorker[it->first]) {
+                if (mAllSubtasks[subtaskId].get().status != Subtask::COMPLETED) {
+                    mAllSubtasks[subtaskId].get().status = Subtask::ENQUEUED;
+                    mSubtaskQueue.push(mAllSubtasks[subtaskId]);
+                }
+            }
             mClients.erase(it++);
         } else {
             ++it;
