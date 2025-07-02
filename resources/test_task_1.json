@@ -1,40 +1,62 @@
 {
-  "name": "test task 1",
-  "lib": "output/libtasklib.so",
+  "name": "Number crunching",
+  "lib": "libtasklib.so",
   "root": 1,
   "subtasks": [
     {
       "index": 1,
-      "function": "func1",
+      "function": "cartesian",
       "depends_on": [2, 3]
     },
     {
       "index": 2,
-      "function": "func2",
-      "depends_on": [4, 5]
+      "function": "keep10",
+      "depends_on": [4, 8]
     },
     {
       "index": 3,
-      "function": "func3",
-      "depends_on": [6]
+      "function": "square",
+      "depends_on": [5]
     },
     {
       "index": 4,
-      "function": "func4",
-      "depends_on": [],
-      "input_path": "resources/data1.txt"
+      "function": "cartesian",
+      "depends_on": [6, 7]
     },
     {
       "index": 5,
-      "function": "func5",
-      "depends_on": [],
-      "input_path": "resources/data2.txt"
+      "function": "maximum",
+      "depends_on": [9, 10]
     },
     {
       "index": 6,
-      "function": "func6",
+      "function": "even",
       "depends_on": [],
-      "input_path": "resources/data3.txt"
+      "input_path": "data1.txt"
+    },
+    {
+      "index": 7,
+      "function": "odd",
+      "depends_on": [],
+      "input_path": "data2.txt"
+    },
+    {
+      "index": 8,
+      "function": "primes",
+      "depends_on": [],
+      "input_path": "data3.txt"
+    },
+    {
+      "index": 9,
+      "function": "nth_fibo",
+      "depends_on": [],
+      "input_path": "data4.txt"
+    },
+    {
+      "index": 10,
+      "function": "n_num",
+      "depends_on": [],
+      "input_path": "data5.txt"
     }
   ]
 }
