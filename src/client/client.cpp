@@ -13,11 +13,13 @@ Client::Client(
     const std::string &trackerHost,
     const int trackerPort,
     const bool notWorker,
+    const int jobLimit,
     std::string  taskConfigPath,
     std::string  outputPath) :
         mTrackerHost(trackerHost),
         mTrackerPort(trackerPort),
         mNotWorker(notWorker),
+        mJobLimit(jobLimit),
         mTaskConfigPath(std::move(taskConfigPath)),
         mOutputPath(std::move(outputPath)),
         mTrackerConnection(trackerHost, trackerPort),
@@ -80,7 +82,7 @@ auto Client::bindRcpServerFunctions() -> void {
 auto Client::registerAsClient() -> bool {
     mTrackerConnection.set_timeout(TIMEOUT_MS);
     try {
-        mOwnId = mTrackerConnection.call(RPC_REGISTER_CLIENT, LOCALHOST, getOwnPort(), !mNotWorker).as<Id>();
+        mOwnId = mTrackerConnection.call(RPC_REGISTER_CLIENT, LOCALHOST, getOwnPort(), !mNotWorker, mJobLimit).as<Id>();
     } catch (std::exception&) {
         lg::error("Tracker unavailable at {}:{}",
             mTrackerHost, mTrackerPort);
@@ -295,5 +297,5 @@ auto Client::getOwnPort() const -> int {
 }
 
 auto Client::isBusy() const -> bool {
-    return mJobQueue.size() + mWorkerThreads.size() >= ACTIVE_JOB_LIMIT;
+    return mJobQueue.size() + mWorkerThreads.size() >= mJobLimit;
 }

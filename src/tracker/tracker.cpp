@@ -32,7 +32,7 @@ auto Tracker::run() -> int {
     return 0;
 }
 
-auto Tracker::registerWorker(const std::string &host, int port, const bool isWorker) -> Id {
+auto Tracker::registerWorker(const std::string &host, int port, const bool isWorker, const int jobLimit) -> Id {
     const auto id = this->generateUniqueId();
 
     mClients[id] = Client {
@@ -41,7 +41,8 @@ auto Tracker::registerWorker(const std::string &host, int port, const bool isWor
         .rpcClient = std::make_unique<rpc::client>(host, port),
         .lastHeartbeat = std::chrono::system_clock::now(),
         .isWorker = isWorker,
-        .isFree = true};
+        .isFree = true,
+        .jobLimit = jobLimit};
 
     printWorkers();
     return id;
@@ -130,7 +131,10 @@ auto Tracker::dispatchJobsFromQueue() -> void {
                 lg::debug("Subtask \"{}\" accepted by worker with ID={}", subtask.functionName, worker.id);
                 mSubtasksByWorker[worker.id].push_back(subtask.id);
                 subtask.status = Subtask::SUBMITTED;
-                worker.isFree = false;
+                worker.assignedJobs++;
+                if (worker.assignedJobs == worker.jobLimit) {
+                    worker.isFree = false;
+                }
                 mSubtaskQueue.pop();
             }
             else {
@@ -143,6 +147,7 @@ auto Tracker::dispatchJobsFromQueue() -> void {
 }
 
 auto Tracker::markSubtaskCompleted(const Id workerId, const Id subtaskId) -> void {
+    mClients.at(workerId).assignedJobs--;
     mClients.at(workerId).isFree = true;
     auto& subtask = mAllSubtasks.at(subtaskId).get();
     subtask.completedBy = workerId;
@@ -187,8 +192,8 @@ auto Tracker::getSubtaskAcquirerSocketAddress(const Id subtaskId) const -> Socke
 }
 
 auto Tracker::bindRpcServerFunctions() -> void {
-    mRpcServer.bind(RPC_REGISTER_CLIENT, [this](const std::string& host, const int port, bool isWorker) {
-        return this->registerWorker(host, port, isWorker);
+    mRpcServer.bind(RPC_REGISTER_CLIENT, [this](const std::string& host, const int port, bool isWorker, int jobLimit) {
+        return this->registerWorker(host, port, isWorker, jobLimit);
     });
     mRpcServer.bind(RPC_UNREGISTER_CLIENT, [this](const Id clientId) {
         this->unregisterWorker(clientId);
@@ -222,9 +227,9 @@ auto Tracker::refreshClientList() -> void {
         if (timeSinceLastHeartbeat > CLIENT_HEARTBEAT_MAX_INTERVAL_MS) {
             lg::info("Removed client {} after no heartbeat", it->first);
             for (auto subtaskId : mSubtasksByWorker[it->first]) {
-                if (mAllSubtasks[subtaskId].get().status != Subtask::COMPLETED) {
-                    mAllSubtasks[subtaskId].get().status = Subtask::ENQUEUED;
-                    mSubtaskQueue.push(mAllSubtasks[subtaskId]);
+                if (mAllSubtasks.at(subtaskId).get().status != Subtask::COMPLETED) {
+                    mAllSubtasks.at(subtaskId).get().status = Subtask::ENQUEUED;
+                    mSubtaskQueue.push(mAllSubtasks.at(subtaskId));
                 }
             }
             mClients.erase(it++);

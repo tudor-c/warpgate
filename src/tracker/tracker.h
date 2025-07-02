@@ -21,6 +21,8 @@ public:
         std::chrono::time_point<std::chrono::system_clock> lastHeartbeat;
         bool isWorker;
         bool isFree;
+        int jobLimit;
+        int assignedJobs = 0;
     };
 
 private:
@@ -45,7 +47,7 @@ private:
 
     auto bindRpcServerFunctions() -> void;
 
-    auto registerWorker(const std::string &host, int port, bool isWorker) -> Id;
+    auto registerWorker(const std::string &host, int port, bool isWorker, int jobLimit) -> Id;
     auto unregisterWorker(Id id) -> void;
     auto registerTask(const Task&, Id acquirerId) -> void;
     auto printWorkers() const -> void;

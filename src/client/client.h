@@ -17,6 +17,7 @@ public:
         const std::string& trackerHost,
         int trackerPort,
         bool notWorker,
+        int jobLimit,
         std::string  taskConfigPath,
         std::string  outputPath);
 
@@ -56,6 +57,7 @@ private:
     const std::string mTrackerHost;
     const int mTrackerPort;
     const bool mNotWorker;
+    int mJobLimit = 1;
 
     const std::string mTaskConfigPath;
     std::string mTaskLibPath;

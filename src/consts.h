@@ -31,6 +31,7 @@ constexpr auto FLAG_CLIENT_TRACKER_PORT = "--port";
 constexpr auto FLAG_CLIENT_TASK_CONFIG_PATH = "--task";
 constexpr auto FLAG_CLIENT_OUTPUT_PATH = "--output";
 constexpr auto FLAG_CLIENT_NOT_WORKER = "--not-worker";
+constexpr auto FLAG_CLIENT_JOB_LIMIT = "--job-limit";
 
 constexpr auto FLAG_TRACKER_PORT = "--port";
 

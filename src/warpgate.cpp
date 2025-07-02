@@ -26,6 +26,7 @@ auto Warpgate::run() -> int {
                 mTrackerHost,
                 mTrackerPort,
                 mNotWorker,
+                mJobLimit,
                 mTaskConfigPath,
                 mOutputPath);
             return client.run();
@@ -66,6 +67,10 @@ auto Warpgate::parseArgs(const int argc, const char *argv[]) -> bool {
         .help("Node will only request a task but will not receive any work to do")
         .store_into(mNotWorker)
         .default_value(false);
+    clientArgs.add_argument(FLAG_CLIENT_JOB_LIMIT)
+        .help("Maximum number of subtask client can take simultaneously")
+        .store_into(mJobLimit)
+        .default_value(1);
 
     argparse::ArgumentParser trackerArgs(TRACKER_SUBPARSER);
     trackerArgs.add_argument(FLAG_TRACKER_PORT)

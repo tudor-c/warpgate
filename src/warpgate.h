@@ -26,6 +26,7 @@ private:
     std::string mOutputPath;
     bool mTrackerTestArg = false;
     bool mNotWorker = false;
+    int mJobLimit = 1;
 
     // tracker options
     int mPort = 8080;
